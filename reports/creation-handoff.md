@@ -5,7 +5,7 @@
 - Skill: `qiaomu-campus-resume` 1.5.0
 - Job: use a one-question-at-a-time evidence interview or an uploaded resume to collect and confirm student job-search facts, then generate one role-appropriate, locally validated HTML/PDF resume.
 - Local status: installed in the canonical Agent Skills directory.
-- Publication: requested; complete only after feature-branch PR merge, release and clean installation verification.
+- Publication: https://github.com/joeseesun/qiaomu-campus-resume, release v1.5.0; the post-release clean-install result is reported externally after the tag exists.
 - Rollback: private local backup retained outside the public package.
 
 ## Reference skills studied

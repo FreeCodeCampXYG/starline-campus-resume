@@ -3,7 +3,7 @@
   "version": "1.5.0",
   "owner": "向阳乔木",
   "updated_at": "2026-08-04",
-  "status": "release-candidate",
+  "status": "public",
   "maturity_tier": "production",
   "context_budget_tier": "production",
   "copyright": "Copyright (c) 向阳乔木",
@@ -68,5 +68,5 @@
     "typography marker, Latin layer, zero px, zero italic and zero link-chip check",
     "visual page review"
   ],
-  "publication": "requested; pending feature-branch PR and install verification"
+  "publication": "https://github.com/joeseesun/qiaomu-campus-resume (release v1.5.0)"
 }

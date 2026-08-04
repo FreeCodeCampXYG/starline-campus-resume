@@ -161,6 +161,7 @@
       "reports/creation-handoff.md",
       "reports/local-release-check.json",
       "reports/output-evidence.json",
+      "reports/pr-release-check.json",
       "reports/prior-art-interview-v15.json",
       "reports/prior-art-research.md",
       "reports/skill-ir.json",
