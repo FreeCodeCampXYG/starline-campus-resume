@@ -1,0 +1,56 @@
+{
+  "cases": [
+    {
+      "id": "dialogue_interview_readiness",
+      "prompt": "我没有简历，请一次问一个问题，收集完整后再生成后端实习简历。",
+      "input_files": ["assets/example-interview-ledger.json"],
+      "baseline_output": "none; deterministic dialogue ledger fixture",
+      "with_skill_output": "assess_interview.py readiness report",
+      "assertions": [
+        "the interaction contract asks one core question per turn",
+        "each question includes a current hypothesis or recommended answer that the student can correct",
+        "the interview follows one evidence item depth-first through ownership, actions, result and proof",
+        "generation is blocked until two evidence loops, linked skills, zero blocking uncertainties and explicit confirmation are present",
+        "sensitive private fields are rejected",
+        "the default final deliverable is one role-appropriate PDF rather than a batch"
+      ],
+      "human_notes": "The fixture proves deterministic gate behavior only. Naturalness, student comfort, completion rate and recruiting outcomes remain missing evidence."
+    },
+    {
+      "id": "fictional_backend_student",
+      "prompt": "用虚构示例数据一次生成六种有细分割线但无圆角框的一页中文后端实习简历。",
+      "input_files": ["assets/example-resume.json"],
+      "baseline_output": "none; deterministic runtime fixture",
+      "with_skill_output": "reports/demo 下六套 HTML/PDF 与六风格清单",
+      "assertions": [
+        "resume-data.json passes content-integrity validation",
+        "HTML uses border-bottom separators but contains no border-radius or box/side border declarations",
+        "batch manifest contains exactly six named themes",
+        "each HTML has a matching theme marker, palette and target font declaration",
+        "Kami PDF embeds TsangerJinKai02 and other themes embed their declared local fonts",
+        "all six PDFs are A4, text-extractable, unencrypted, and one or two pages",
+        "all six PDF texts contain the fictional name, email, and standard education heading",
+        "every experience and project bullet has an allowed evidence_type"
+      ],
+      "human_notes": "Inspect all six rendered pages for hierarchy, spacing, line wraps, clipped text, awkward page breaks, excessive blank space, and meaningful visual differentiation beyond color. This fixture is fictional and cannot establish recruiting outcomes."
+    }
+    ,
+    {
+      "id": "fictional_reference_style_set",
+      "prompt": "用虚构示例数据生成六个 ResumeCollection 安全重构参考预设，不复制上游资产。",
+      "input_files": ["assets/example-resume.json"],
+      "baseline_output": "none; deterministic runtime fixture",
+      "with_skill_output": "reports/demo-reference 下六套 HTML/PDF 与参考风格清单",
+      "assertions": [
+        "batch manifest contains exactly rc-003, rc-071, rc-102, rc-109, rc-150 and rc-214",
+        "each output records its base theme, source id and source URL",
+        "each HTML contains matching data-theme and data-reference-style markers",
+        "HTML contains no border-radius, box border, top border, side border, sidebar, photo or remote asset",
+        "all PDFs remain A4, text-extractable, unencrypted, and one or two pages",
+        "visual differences include hierarchy and spacing, not only color"
+      ],
+      "human_notes": "Inspect all six pages. The rc-* presets are original ATS-safe reconstructions inspired by layout mechanisms; no upstream DOCX, image, icon or font is redistributed."
+    }
+  ],
+  "evidence_boundary": "Recorded fixture and deterministic runtime checks are not provider-backed generation or human blind-review evidence."
+}
