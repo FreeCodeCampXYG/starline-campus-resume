@@ -9,6 +9,7 @@
   "version": 1,
   "language": "zh-CN",
   "theme": "ats-classic",
+  "section_order": ["education", "experience", "projects", "skills", "awards"],
   "reference_style": "rc-071",
   "filename": "姓名_目标岗位_简历",
   "target": {"role": "后端开发实习", "company_type": "互联网"},
@@ -82,13 +83,14 @@
 
 - `language`: `zh-CN`、`en`
 - `theme`: `ats-classic`、`kami`、`swiss`、`tech`、`campus`、`compact`
+- `section_order`（可选）：只控制章节顺序，不隐藏非空章节；允许 `education`、`experience`、`projects`、`skills`、`awards`，不得重复。未设置时使用学生简历默认顺序。
 - `reference_style`（可选）：`rc-003`、`rc-071`、`rc-102`、`rc-109`、`rc-150`、`rc-214`。设置后自动使用对应基础主题；未选择参考预设时省略该字段。
 - `evidence_type`: `source_resume`、`user_confirmed`、`repository_verified`、`document_verified`、`conservative_estimate`
 
 ## 约束
 
 - `experience` 与 `projects` 至少有一个非空；应届生最好有 2 项有证据的核心经历。
-- 每项 1–5 条 bullet；每条必须是对象，禁止纯字符串绕过证据字段。
+- 每项 1–5 条 bullet；每条必须是对象，禁止纯字符串绕过证据字段。每项优先 2–4 条，第 5 条只在确有独立、岗位相关成果时保留，验证器会给出密度警告。
 - `source_note` 不渲染到 HTML/PDF。
 - `filename` 不含扩展名和路径分隔符。
 - 不存在的可选字段直接省略或使用空数组，不写“待补充”“N/A”“XXX”。

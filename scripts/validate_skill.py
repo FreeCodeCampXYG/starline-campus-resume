@@ -29,6 +29,7 @@ REQUIRED_FILES = [
     "scripts/validate_style_set.py",
     "scripts/trigger_eval.py",
     "references/style-system.md",
+    "references/best-practices.md",
     "references/intake-and-interview.md",
     "references/typography-system.md",
     "references/resume-collection-catalog.md",
@@ -58,6 +59,9 @@ def main() -> None:
         errors.append("SKILL.md 名称不匹配")
     if "description:" not in skill_text or "大学生" not in skill_text or "PDF" not in skill_text:
         errors.append("SKILL.md description 缺少关键路由信息")
+    for required in ("四种能力路由", "从 0 问答写简历", "排版快速路径", "提供 JD 针对性定制", "一次生成多种风格"):
+        if required not in skill_text:
+            errors.append(f"SKILL.md 缺少宣传能力路由：{required}")
     for link in re.findall(r"\]\(([^)]+\.md)\)", skill_text):
         if not (root / link).is_file():
             errors.append(f"SKILL.md 引用了不存在的文件：{link}")
@@ -109,13 +113,31 @@ def main() -> None:
         for field in ("display_name:", "short_description:", "default_prompt:", "adapter_targets:"):
             if field not in interface_text:
                 errors.append(f"agents/interface.yaml 缺少 {field}")
+        for required in ("从 0", "JD", "source_resume", "--all-themes"):
+            if required not in interface_text:
+                errors.append(f"agents/interface.yaml 缺少能力路由：{required}")
 
     intake_path = root / "references/intake-and-interview.md"
     if intake_path.is_file():
         intake_text = intake_path.read_text(encoding="utf-8")
-        for required in ("每轮只问一个核心问题", "当前判断", "interview-ledger.json", "assess_interview.py", "最终确认"):
+        for required in (
+            "每轮只问一个核心问题",
+            "当前判断",
+            "interview-ledger.json",
+            "assess_interview.py",
+            "最终确认",
+            "旧简历纯排版快速路径",
+            "JD 定制路径",
+        ):
             if required not in intake_text:
                 errors.append(f"对话访谈协议缺少：{required}")
+
+    practices_path = root / "references/best-practices.md"
+    if practices_path.is_file():
+        practices_text = practices_path.read_text(encoding="utf-8")
+        for required in ("A-C-R-E", "Greenhouse", "CMU", "自适应密度", "要求 → 事实证据"):
+            if required not in practices_text:
+                errors.append(f"最佳实践参考缺少：{required}")
 
     report = {"ok": not errors, "root": str(root), "errors": errors, "warnings": warnings}
     print(json.dumps(report, ensure_ascii=False, indent=2))

@@ -1,8 +1,8 @@
 {
   "name": "qiaomu-campus-resume",
-  "version": "1.5.0",
+  "version": "1.6.1",
   "owner": "向阳乔木",
-  "updated_at": "2026-08-04",
+  "updated_at": "2026-08-06",
   "status": "public",
   "maturity_tier": "production",
   "context_budget_tier": "production",
@@ -13,7 +13,7 @@
   },
   "upstream_inspiration": "user-provided computer-science student resume prompt; Matt Pocock/grill-me; Addy Osmani/interview-me; alirezarezvani/grill-me; tw93/kami@fbdb54f59b7f224db55322357e5739b9ef9687f4; mmmlllnnn/ResumeCollection@56a18c26dd8d6ecd60df80b7dd8261b78dd70998 (methods and layout research only)",
   "intent": {
-    "job_to_be_done": "通过一问一答深挖并确认大学生的求职事实，再生成一份可信、岗位相关、可编辑且经过 PDF 验收的投递简历",
+    "job_to_be_done": "为大学生提供从 0 问答写简历、按 JD 定制、优化或只美化旧简历，以及一次生成六种风格 PDF 的完整工作流",
     "target_users": [
       "university students",
       "internship applicants",
@@ -32,6 +32,7 @@
       "one default editable local HTML resume",
       "one default A4 text-based PDF resume",
       "optional explicit multi-theme or ResumeCollection comparison set",
+      "local source extraction for layout-only resume restyling",
       "validation reports"
     ],
     "exclusions": [
@@ -48,12 +49,14 @@
     "page_limit": 1,
     "theme": "one role-appropriate single-column theme; multi-theme only on explicit request",
     "reference_style": "explicit opt-in only",
-    "typography_system": "1.4 Latin/CJK split print scale",
+    "typography_system": "1.5 Latin/CJK split scale with adaptive density",
     "privacy": "local-only",
     "claim_policy": "evidence-bound"
   },
   "release_gates": [
     "one-question dialogue protocol",
+    "four-route capability contract for from-scratch, JD-targeted, existing-resume and multi-style requests",
+    "layout-only fast path preserves source facts and requires one explicit confirmation",
     "interview readiness assessment with two evidence loops and explicit confirmation",
     "package validation",
     "trigger evaluation",
@@ -66,7 +69,9 @@
     "six-style batch manifest check",
     "six-reference-style batch manifest check",
     "typography marker, Latin layer, zero px, zero italic and zero link-chip check",
+    "A-C-R-E content quality warnings and evidence-linked skills check",
+    "adaptive sparse, balanced and dense layout marker check",
     "visual page review"
   ],
-  "publication": "https://github.com/joeseesun/qiaomu-campus-resume (release v1.5.0)"
+  "publication": "https://github.com/joeseesun/qiaomu-campus-resume (release v1.6.1)"
 }

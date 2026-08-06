@@ -102,6 +102,29 @@ def assess(data: dict[str, Any]) -> dict[str, Any]:
         errors.append("至少需要两项形成个人贡献、行动、结果与证据闭环的经历")
         next_questions.append("除当前最强经历外，还有哪项项目、实习、课程、竞赛或校园实践最能证明岗位能力？")
 
+    job_requirements = data.get("job_requirements") if isinstance(data.get("job_requirements"), list) else []
+    supported_requirements: list[dict[str, Any]] = []
+    requirement_gaps: list[dict[str, Any]] = []
+    if target.get("jd_available") is True and not job_requirements:
+        errors.append("已提供 JD，但尚未建立要求—证据映射")
+        next_questions.append("这份 JD 最关键的硬门槛或职责是什么？我会先关联你已有的事实证据。")
+    for index, requirement in enumerate(job_requirements, 1):
+        if not isinstance(requirement, dict) or not nonempty(requirement.get("requirement")):
+            errors.append(f"job_requirements[{index}] 缺少要求描述")
+            continue
+        status = requirement.get("status")
+        refs = requirement.get("evidence_ids") if isinstance(requirement.get("evidence_ids"), list) else []
+        valid_refs = [str(ref).strip() for ref in refs if str(ref).strip() in ids]
+        if status == "supported":
+            if not valid_refs:
+                errors.append(f"job_requirements[{index}] 标记为 supported，但没有关联有效证据")
+            else:
+                supported_requirements.append(requirement)
+        elif status == "gap":
+            requirement_gaps.append(requirement)
+        else:
+            errors.append(f"job_requirements[{index}] status 必须为 supported 或 gap")
+
     skills = data.get("skills") if isinstance(data.get("skills"), list) else []
     linked_skills = [
         skill
@@ -137,6 +160,8 @@ def assess(data: dict[str, Any]) -> dict[str, Any]:
 
     if len(evidence_items) > len(confirmed_items):
         warnings.append(f"{len(evidence_items) - len(confirmed_items)} 项经历尚未形成完整证据闭环")
+    if requirement_gaps:
+        warnings.append(f"目标岗位仍有 {len(requirement_gaps)} 项明确要求缺口；交付时必须如实说明")
 
     return {
         "ok": not errors,
@@ -146,6 +171,9 @@ def assess(data: dict[str, Any]) -> dict[str, Any]:
             "evidence_items": len(evidence_items),
             "confirmed_evidence_items": len(confirmed_items),
             "linked_skills": len(linked_skills),
+            "job_requirements": len(job_requirements),
+            "supported_requirements": len(supported_requirements),
+            "requirement_gaps": len(requirement_gaps),
             "blocking_uncertainties": len(blocking),
         },
         "errors": errors,

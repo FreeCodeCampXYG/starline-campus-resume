@@ -41,7 +41,7 @@
       "tech": ["Java", "Spring Boot", "MySQL", "Redis"],
       "bullets": [
         {
-          "text": "负责设备预约模块的接口与数据表设计，交付 8 个 REST API，并补充参数校验与统一异常处理。",
+          "text": "设计设备预约模块的接口与数据表，交付 8 个 REST API，并补充参数校验与统一异常处理。",
           "evidence_type": "user_confirmed",
           "source_note": "虚构测试夹具；非真实人物"
         },
@@ -79,7 +79,7 @@
       "role": "个人项目",
       "start": "2024.11",
       "end": "2025.01",
-      "tech": ["Java", "NIO", "JUnit"],
+      "tech": ["Java", "NIO", "JUnit", "Linux"],
       "link": "https://github.com/example-student/minikv",
       "bullets": [
         {

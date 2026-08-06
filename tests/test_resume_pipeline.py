@@ -33,11 +33,33 @@ class ResumePipelineTests(unittest.TestCase):
         self.assertEqual(errors, [])
         self.assertGreaterEqual(counts["bullets"], 4)
 
+    def test_skill_declares_all_four_marketing_routes(self) -> None:
+        skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+        interface = (ROOT / "agents/interface.yaml").read_text(encoding="utf-8")
+        triggers = json.loads((ROOT / "evals/trigger_cases.json").read_text(encoding="utf-8"))
+        for term in ("从 0 问答写简历", "提供旧简历优化", "提供 JD 针对性定制", "一次生成多种风格"):
+            self.assertIn(term, skill)
+        self.assertIn("source_resume", interface)
+        self.assertIn("--all-themes", interface)
+        families = {item["family"] for item in triggers["should_trigger"]}
+        self.assertTrue(
+            {"interview_from_scratch", "upload_and_jd", "existing_resume_layout_only", "six_style_batch"}.issubset(families)
+        )
+
     def test_plain_string_bullet_is_rejected(self) -> None:
         broken = json.loads(json.dumps(self.data, ensure_ascii=False))
         broken["projects"][0]["bullets"] = ["没有证据字段的描述"]
         errors, _, _ = self.validator.validate_data(broken)
         self.assertTrue(any("不能是纯字符串" in error for error in errors))
+
+    def test_layout_only_source_resume_provenance_passes(self) -> None:
+        layout_only = json.loads(json.dumps(self.data, ensure_ascii=False))
+        for section in ("experience", "projects"):
+            for item in layout_only[section]:
+                for bullet in item["bullets"]:
+                    bullet["evidence_type"] = "source_resume"
+        errors, _, _ = self.validator.validate_data(layout_only)
+        self.assertEqual(errors, [])
 
     def test_confirmed_interview_ledger_is_ready(self) -> None:
         result = self.interview_validator.assess(self.interview)
@@ -59,6 +81,13 @@ class ResumePipelineTests(unittest.TestCase):
         self.assertFalse(result["ok"])
         self.assertTrue(any("至少需要两项" in error for error in result["errors"]))
 
+    def test_interview_requires_jd_requirement_evidence_mapping(self) -> None:
+        broken = json.loads(json.dumps(self.interview, ensure_ascii=False))
+        broken["job_requirements"][0]["evidence_ids"] = ["missing-evidence"]
+        result = self.interview_validator.assess(broken)
+        self.assertFalse(result["ok"])
+        self.assertTrue(any("没有关联有效证据" in error for error in result["errors"]))
+
     def test_interview_rejects_sensitive_fields(self) -> None:
         broken = json.loads(json.dumps(self.interview, ensure_ascii=False))
         broken["basics"]["id_card"] = "000000000000000000"
@@ -77,7 +106,34 @@ class ResumePipelineTests(unittest.TestCase):
         self.assertIn("TsangerJinKai02", rendered)
         self.assertIn("#f5f4ed", rendered.lower())
         self.assertIn("#1b365d", rendered.lower())
+        self.assertIn('<meta name="resume-typography-system" content="1.5">', rendered)
+        self.assertIn('<meta name="resume-layout-system" content="adaptive-density-1.0">', rendered)
+        self.assertIn('data-density="sparse"', rendered)
         self.assertIn("教育经历", rendered)
+
+    def test_section_order_is_configurable_without_hiding_sections(self) -> None:
+        reordered = json.loads(json.dumps(self.data, ensure_ascii=False))
+        reordered["section_order"] = ["education", "skills", "projects", "experience", "awards"]
+        rendered = self.renderer.make_html(reordered)
+        self.assertLess(rendered.index("教育经历"), rendered.index("专业技能"))
+        self.assertLess(rendered.index("专业技能"), rendered.index("项目经历"))
+        self.assertLess(rendered.index("项目经历"), rendered.index("实习与实践"))
+        self.assertLess(rendered.index("实习与实践"), rendered.index("奖项与证书"))
+
+    def test_adaptive_density_routes_sparse_and_dense_content(self) -> None:
+        self.assertEqual(self.renderer.content_density(self.data), "sparse")
+        dense = json.loads(json.dumps(self.data, ensure_ascii=False))
+        dense["projects"] = dense["projects"] * 4
+        self.assertEqual(self.renderer.content_density(dense), "dense")
+        self.assertIn('data-density="dense"', self.renderer.make_html(dense))
+
+    def test_content_quality_warnings_flag_weak_opening(self) -> None:
+        broken = json.loads(json.dumps(self.data, ensure_ascii=False))
+        broken["projects"][0]["bullets"][0]["text"] = "负责校园活动报名系统接口开发，并完成课程验收。"
+        errors, warnings, counts = self.validator.validate_data(broken)
+        self.assertEqual(errors, [])
+        self.assertEqual(counts["weak_openings"], 1)
+        self.assertTrue(any("弱职责词" in warning for warning in warnings))
 
     def test_all_six_themes_are_distinct_and_border_safe(self) -> None:
         self.assertEqual(len(self.renderer.THEME_ORDER), 6)
@@ -116,6 +172,7 @@ class ResumePipelineTests(unittest.TestCase):
             self.assertNotIn("font-style: italic", rendered.lower(), theme)
             self.assertNotRegex(rendered, r"\.headline\s*\{[^}]*text-transform\s*:\s*uppercase", theme)
             self.assertIn("--name-size:", rendered, theme)
+            self.assertRegex(rendered, r'data-density="(?:sparse|balanced|dense)"')
             self.assertIn("--section-weight:", rendered, theme)
             self.assertIn("tabular-nums lining-nums", rendered, theme)
             self.assertIn("text-underline-offset", rendered, theme)

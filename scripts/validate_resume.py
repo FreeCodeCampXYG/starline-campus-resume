@@ -27,12 +27,19 @@ PLACEHOLDER_RE = re.compile(
 )
 ESTIMATE_MARKER_RE = re.compile(r"(?:约|大约|近|超过|不少于|~|≈|\d+\s*[-–—]\s*\d+)")
 DATE_RE = re.compile(r"^(\d{4})[.\-/](\d{1,2})$")
+WEAK_OPENING_RE = re.compile(r"^(?:主要)?(?:负责|参与|协助|熟悉|了解|学习|帮助)|^(?:responsible for|helped|assisted with|familiar with)\b", re.IGNORECASE)
+RESULT_SIGNAL_RE = re.compile(
+    r"(?:\d|%|上线|交付|验收|部署|发布|合并|通过|完成|实现|覆盖|测试|验证|采用|恢复|定位|解决|降低|减少|提升|提高|缩短|节省|获奖|deployed|launched|delivered|shipped|tested|validated|reduced|increased|improved|completed|implemented|resolved)",
+    re.IGNORECASE,
+)
+SUMMARY_CLICHE_RE = re.compile(r"(?:学习能力强|责任心强|沟通能力强|团队合作精神|热爱技术|积极主动|hard[- ]working|team player|fast learner)", re.IGNORECASE)
+ALLOWED_SECTION_ORDER = ("education", "experience", "projects", "skills", "awards")
 
 THEME_CHECKS = {
     "ats-classic": {"brand": "#6d2536", "paper": "#ffffff", "font": "Songti", "latin": "Palatino"},
     "kami": {"brand": "#1b365d", "paper": "#f5f4ed", "font": "TsangerJinKai02", "latin": "Palatino"},
     "swiss": {"brand": "#c63c32", "paper": "#fcfcfa", "font": "PingFang", "latin": "Avenir Next"},
-    "tech": {"brand": "#00649a", "paper": "#f7f9fa", "font": "PingFang", "latin": "IBM Plex Sans"},
+    "tech": {"brand": "#00649a", "paper": "#ffffff", "font": "PingFang", "latin": "IBM Plex Sans"},
     "campus": {"brand": "#16745f", "paper": "#fffdf8", "font": "PingFang", "latin": "Avenir Next"},
     "compact": {"brand": "#2b4c6f", "paper": "#ffffff", "font": "Songti", "latin": "Palatino"},
 }
@@ -81,7 +88,7 @@ def collect_texts(data: Any) -> list[str]:
 def validate_data(data: dict[str, Any]) -> tuple[list[str], list[str], dict[str, int]]:
     errors: list[str] = []
     warnings: list[str] = []
-    counts = {"education": 0, "experience": 0, "projects": 0, "skills": 0, "bullets": 0}
+    counts = {"education": 0, "experience": 0, "projects": 0, "skills": 0, "bullets": 0, "result_bullets": 0, "weak_openings": 0}
 
     if data.get("version") != 1:
         errors.append("version 必须为 1")
@@ -92,6 +99,17 @@ def validate_data(data: dict[str, Any]) -> tuple[list[str], list[str], dict[str,
     reference_style = str(data.get("reference_style", "")).strip()
     if reference_style and reference_style not in REFERENCE_STYLE_CHECKS:
         errors.append(f"reference_style 必须为以下之一：{', '.join(REFERENCE_STYLE_CHECKS)}")
+    section_order = data.get("section_order")
+    if section_order is not None:
+        if not isinstance(section_order, list):
+            errors.append("section_order 必须是数组")
+        else:
+            normalized_order = [str(value).strip() for value in section_order]
+            invalid_sections = [value for value in normalized_order if value not in ALLOWED_SECTION_ORDER]
+            if invalid_sections:
+                errors.append(f"section_order 包含未知章节：{', '.join(invalid_sections)}")
+            if len(normalized_order) != len(set(normalized_order)):
+                errors.append("section_order 不能包含重复章节")
     filename = str(data.get("filename", ""))
     if not filename or re.search(r"[\\/:*?\"<>|]", filename):
         errors.append("filename 不能为空且不能包含路径分隔符或非法字符")
@@ -146,6 +164,8 @@ def validate_data(data: dict[str, Any]) -> tuple[list[str], list[str], dict[str,
             if not isinstance(bullets, list) or not 1 <= len(bullets) <= 5:
                 errors.append(f"{section}[{item_index}] 必须包含 1–5 条 bullets")
                 continue
+            if len(bullets) == 5:
+                warnings.append(f"{section}[{item_index}] 有 5 条 bullet；请确认每条都是独立且岗位相关的成果")
             for bullet_index, bullet in enumerate(bullets, 1):
                 counts["bullets"] += 1
                 path = f"{section}[{item_index}].bullets[{bullet_index}]"
@@ -156,6 +176,14 @@ def validate_data(data: dict[str, Any]) -> tuple[list[str], list[str], dict[str,
                 evidence = str(bullet.get("evidence_type", "")).strip()
                 if len(text) < 12:
                     errors.append(f"{path}.text 过短或为空")
+                max_length = 92 if data.get("language") == "zh-CN" else 240
+                if len(text) > max_length:
+                    warnings.append(f"{path}.text 可能超过两行，建议拆分或删减")
+                if WEAK_OPENING_RE.search(text):
+                    counts["weak_openings"] += 1
+                    warnings.append(f"{path}.text 以弱职责词开头；请补充本人动作与结果")
+                if RESULT_SIGNAL_RE.search(text):
+                    counts["result_bullets"] += 1
                 if evidence not in ALLOWED_EVIDENCE:
                     errors.append(f"{path}.evidence_type 无效或缺失")
                 if not nonempty(bullet.get("source_note")):
@@ -170,6 +198,29 @@ def validate_data(data: dict[str, Any]) -> tuple[list[str], list[str], dict[str,
     summary = str(basics.get("summary", ""))
     if len(summary) > 280:
         warnings.append("summary 可能过长，建议控制在 2–3 行")
+    if SUMMARY_CLICHE_RE.search(summary):
+        warnings.append("summary 包含空泛自我评价；请改为岗位定位与事实证据或直接删除")
+    if counts["bullets"] and counts["result_bullets"] * 2 < counts["bullets"]:
+        warnings.append("超过一半的 bullet 缺少可识别的结果、验证、范围或交付信号")
+
+    evidence_text = " ".join(
+        collect_texts({
+            "education": data.get("education", []),
+            "experience": data.get("experience", []),
+            "projects": data.get("projects", []),
+        })
+    ).lower()
+    unlinked_skills: list[str] = []
+    for group in data.get("skills", []) or []:
+        if not isinstance(group, dict):
+            continue
+        for skill in group.get("items", []) or []:
+            value = str(skill).strip()
+            if value and value.lower() not in evidence_text:
+                unlinked_skills.append(value)
+    if unlinked_skills:
+        sample = "、".join(unlinked_skills[:6])
+        warnings.append(f"以下技能未在教育、经历或项目中找到使用证据：{sample}")
     return errors, warnings, counts
 
 
@@ -214,8 +265,13 @@ def inspect_html(
         errors.append("HTML 中存在 italic；中文简历禁止浏览器合成斜体")
     if link_chip_backgrounds:
         errors.append("项目链接存在色块背景；链接必须保持为克制的纯文本")
-    if '<meta name="resume-typography-system" content="1.4">' not in text:
-        errors.append("HTML 缺少 1.4 排版系统标记")
+    if '<meta name="resume-typography-system" content="1.5">' not in text:
+        errors.append("HTML 缺少 1.5 排版系统标记")
+    if '<meta name="resume-layout-system" content="adaptive-density-1.0">' not in text:
+        errors.append("HTML 缺少自适应密度版式标记")
+    density_match = re.search(r'data-density="(sparse|balanced|dense)"', text)
+    if not density_match:
+        errors.append("HTML 缺少有效的 data-density 标记")
     expected = REFERENCE_STYLE_CHECKS.get(reference_style) if reference_style else THEME_CHECKS.get(theme)
     if not expected:
         errors.append(f"未知主题：{theme}")
@@ -233,6 +289,7 @@ def inspect_html(
     if re.search(r"@font-face\s*\{[^}]*https?://", text, flags=re.IGNORECASE | re.DOTALL):
         errors.append("HTML 字体声明不应依赖远程 URL")
     facts["theme"] = theme
+    facts["density"] = density_match.group(1) if density_match else "unknown"
     facts["reference_style"] = reference_style
     facts["palette"] = f"{expected['paper']} + {expected['brand']}" if expected else "unknown"
     facts["font_declared"] = expected["font"] if expected and expected["font"] in text else "fallback-only"

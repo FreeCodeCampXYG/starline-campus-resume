@@ -44,9 +44,9 @@ THEMES: dict[str, dict[str, Any]] = {
         "heading_font": 'Palatino, Georgia, "Songti SC", "STSong", "SimSun", serif',
         "mono_font": '"SFMono-Regular", Menlo, Monaco, "PingFang SC", monospace',
         "page_margin": "11mm 14mm",
-        "body_size": "9.5pt",
+        "body_size": "9.7pt",
         "line_height": "1.46",
-        "name_size": "24pt",
+        "name_size": "25pt",
         "section_size": "10.8pt",
         "entry_size": "10.4pt",
         "sub_size": "9pt",
@@ -74,7 +74,7 @@ THEMES: dict[str, dict[str, Any]] = {
         "heading_font": 'Palatino, Georgia, "TsangerJinKai02", "Songti SC", "STSong", serif',
         "mono_font": '"SFMono-Regular", Menlo, Monaco, "PingFang SC", monospace',
         "page_margin": "11.5mm 14mm",
-        "body_size": "9.55pt",
+        "body_size": "9.8pt",
         "line_height": "1.52",
         "name_size": "27pt",
         "section_size": "11.1pt",
@@ -104,7 +104,7 @@ THEMES: dict[str, dict[str, Any]] = {
         "heading_font": '"Avenir Next", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", sans-serif',
         "mono_font": '"SFMono-Regular", Menlo, Monaco, "PingFang SC", monospace',
         "page_margin": "11mm 13mm",
-        "body_size": "9.4pt",
+        "body_size": "9.7pt",
         "line_height": "1.46",
         "name_size": "29pt",
         "section_size": "10.8pt",
@@ -123,8 +123,8 @@ THEMES: dict[str, dict[str, Any]] = {
         "label": "技术工程",
         "filename": "04_技术工程",
         "use_case": "软件、AI、数据、算法、DevOps 与工程岗位",
-        "page": "#F7F9FA",
-        "paper": "#F7F9FA",
+        "page": "#FFFFFF",
+        "paper": "#FFFFFF",
         "ink": "#15212B",
         "muted": "#5C6871",
         "line": "#D8E0E5",
@@ -133,17 +133,17 @@ THEMES: dict[str, dict[str, Any]] = {
         "body_font": '"IBM Plex Sans", "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
         "heading_font": '"IBM Plex Sans", "Avenir Next", "PingFang SC", "Hiragino Sans GB", sans-serif',
         "mono_font": '"SFMono-Regular", Menlo, Monaco, "PingFang SC", monospace',
-        "page_margin": "10.5mm 12.5mm",
-        "body_size": "9.35pt",
-        "line_height": "1.44",
-        "name_size": "25pt",
-        "section_size": "10.65pt",
-        "entry_size": "10.35pt",
-        "sub_size": "8.9pt",
-        "meta_size": "8.6pt",
-        "contact_size": "8.8pt",
-        "section_gap": "4.8mm",
-        "entry_gap": "1.25mm",
+        "page_margin": "11.5mm 13.5mm",
+        "body_size": "9.75pt",
+        "line_height": "1.46",
+        "name_size": "27pt",
+        "section_size": "11pt",
+        "entry_size": "10.5pt",
+        "sub_size": "9.1pt",
+        "meta_size": "8.8pt",
+        "contact_size": "8.95pt",
+        "section_gap": "5.6mm",
+        "entry_gap": "1.4mm",
         "name_weight": 600,
         "section_weight": 600,
         "entry_weight": 600,
@@ -164,7 +164,7 @@ THEMES: dict[str, dict[str, Any]] = {
         "heading_font": '"Avenir Next", "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", sans-serif',
         "mono_font": '"SFMono-Regular", Menlo, Monaco, "PingFang SC", monospace',
         "page_margin": "11.5mm 13.5mm",
-        "body_size": "9.5pt",
+        "body_size": "9.75pt",
         "line_height": "1.48",
         "name_size": "27pt",
         "section_size": "11.1pt",
@@ -341,6 +341,8 @@ BILINGUAL_LABELS = {
     "awards": "奖项与证书 · AWARDS",
 }
 
+DEFAULT_SECTION_ORDER = ("education", "experience", "projects", "skills", "awards")
+
 
 def esc(value: Any) -> str:
     return html.escape(str(value or "").strip(), quote=True)
@@ -373,6 +375,55 @@ def resolve_reference_style(raw: Any) -> str | None:
     if reference_style not in REFERENCE_STYLES:
         raise ValueError(f"未知参考风格：{reference_style}；可选值：{', '.join(REFERENCE_STYLE_ORDER)}")
     return reference_style
+
+
+def resolve_section_order(data: dict[str, Any]) -> list[str]:
+    raw = data.get("section_order")
+    if not isinstance(raw, list):
+        return list(DEFAULT_SECTION_ORDER)
+    requested = [str(value).strip() for value in raw if str(value).strip() in DEFAULT_SECTION_ORDER]
+    ordered = list(dict.fromkeys(requested))
+    ordered.extend(section for section in DEFAULT_SECTION_ORDER if section not in ordered)
+    return ordered
+
+
+def content_density(data: dict[str, Any]) -> str:
+    entries = sum(len(data.get(section, []) or []) for section in ("education", "experience", "projects", "awards"))
+    bullets: list[str] = []
+    visible_parts: list[str] = []
+    basics = data.get("basics") if isinstance(data.get("basics"), dict) else {}
+    visible_parts.extend(str(basics.get(field, "")) for field in ("name", "headline", "location", "summary"))
+    for section in ("experience", "projects"):
+        for item in data.get(section, []) or []:
+            if not isinstance(item, dict):
+                continue
+            visible_parts.extend(str(item.get(field, "")) for field in ("organization", "name", "role", "location"))
+            visible_parts.extend(str(value) for value in item.get("tech", []) or [])
+            for bullet in item.get("bullets", []) or []:
+                if isinstance(bullet, dict):
+                    text = str(bullet.get("text", "")).strip()
+                    if text:
+                        bullets.append(text)
+                        visible_parts.append(text)
+    for item in data.get("education", []) or []:
+        if isinstance(item, dict):
+            visible_parts.extend(str(item.get(field, "")) for field in ("school", "degree", "major", "location"))
+            visible_parts.extend(str(value) for value in item.get("details", []) or [])
+    for group in data.get("skills", []) or []:
+        if isinstance(group, dict):
+            visible_parts.append(str(group.get("category", "")))
+            visible_parts.extend(str(value) for value in group.get("items", []) or [])
+    for award in data.get("awards", []) or []:
+        if isinstance(award, dict):
+            visible_parts.extend(str(award.get(field, "")) for field in ("name", "detail"))
+    visible_text = "".join(visible_parts)
+    active_sections = sum(bool(data.get(section)) for section in DEFAULT_SECTION_ORDER)
+    score = len(visible_text) / 95 + len(bullets) * 1.25 + entries * 1.1 + active_sections * 0.8
+    if score < 24:
+        return "sparse"
+    if score < 36:
+        return "balanced"
+    return "dense"
 
 
 def date_range(item: dict[str, Any]) -> str:
@@ -467,6 +518,9 @@ def theme_css(theme_id: str, reference_style: str | None = None) -> str:
     * {{ margin: 0; padding: 0; box-sizing: border-box; }}
     html, body {{ background: var(--paper); }}
     body {{ color: var(--ink); font-family: var(--body-font); font-size: var(--body-size); font-weight: 400; line-height: var(--line-height); letter-spacing: 0; font-kerning: normal; font-variant-numeric: lining-nums; text-rendering: optimizeLegibility; widows: 3; orphans: 3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+    body.density-sparse {{ --body-size: 10.15pt; --line-height: 1.52; --name-size: 29pt; --section-size: 11.35pt; --entry-size: 10.7pt; --sub-size: 9.25pt; --meta-size: 8.95pt; --contact-size: 9.1pt; --section-gap: 6.6mm; --entry-gap: 1.9mm; }}
+    body.density-balanced {{ --body-size: 9.75pt; --line-height: 1.47; --section-gap: 5.5mm; --entry-gap: 1.4mm; }}
+    body.density-dense {{ --body-size: 9.1pt; --line-height: 1.36; --name-size: 24pt; --section-size: 10.4pt; --entry-size: 10pt; --sub-size: 8.55pt; --meta-size: 8.25pt; --contact-size: 8.45pt; --section-gap: 3.6mm; --entry-gap: .9mm; }}
     main {{ width: 100%; }}
     header {{ margin-bottom: 4.8mm; padding-bottom: 2.5mm; border-bottom: .55pt solid var(--line); }}
     .identity {{ display: flex; align-items: flex-end; justify-content: space-between; gap: 6mm; }}
@@ -503,35 +557,35 @@ def theme_css(theme_id: str, reference_style: str | None = None) -> str:
     variants = {
         "ats-classic": """
           .identity { display: block; text-align: center; }
-          h1 { font-size: 23.5pt; letter-spacing: 1.1pt; }
+          h1 { font-size: var(--name-size); letter-spacing: 1.1pt; }
           .position { text-align: center; margin-top: 1.1mm; }
           .contact { justify-content: center; margin-top: .8mm; }
           .summary { text-align: left; margin-top: 2.3mm; }
-          .section-title { color: var(--brand); font-size: 11pt; letter-spacing: 1pt; border-bottom-color: var(--brand); }
+          .section-title { color: var(--brand); font-size: var(--section-size); letter-spacing: 1pt; border-bottom-color: var(--brand); }
           li::marker { color: var(--ink); }
         """,
         "kami": """
-          h1 { font-size: 26.5pt; letter-spacing: .5pt; }
+          h1 { font-size: var(--name-size); letter-spacing: .5pt; }
           .headline { font-size: 10.6pt; }
           .summary { max-width: 92%; }
         """,
         "swiss": """
           header { padding-bottom: 2.8mm; border-bottom-color: var(--brand); }
           .identity { display: block; }
-          h1 { font-size: 29pt; font-weight: 600; letter-spacing: -1pt; }
+          h1 { font-size: var(--name-size); font-weight: 600; letter-spacing: -1pt; }
           .position { display: flex; align-items: baseline; justify-content: space-between; gap: 7mm; margin-top: 1.4mm; text-align: left; }
           .contact { justify-content: flex-end; margin-top: 0; }
           .headline { font-size: 10pt; letter-spacing: .35pt; }
           .summary { max-width: 93%; }
-          .section-title { color: var(--brand); font-size: 10.8pt; letter-spacing: 1.45pt; text-transform: uppercase; border-bottom-color: var(--brand); }
+          .section-title { color: var(--brand); font-size: var(--section-size); letter-spacing: 1.45pt; text-transform: uppercase; border-bottom-color: var(--brand); }
           h3 { font-weight: 600; }
           .skill-row strong { letter-spacing: .35pt; }
         """,
         "tech": """
           header { padding: 2.3mm 2.8mm 2.5mm; background: linear-gradient(90deg, var(--tint), transparent 72%); border-bottom-color: var(--brand); }
-          h1 { font-size: 24pt; letter-spacing: -.45pt; }
+          h1 { font-size: var(--name-size); letter-spacing: -.45pt; }
           .headline { font-family: var(--heading-font); font-size: 9.7pt; letter-spacing: .05pt; }
-          .section-title { color: var(--brand); font-family: var(--heading-font); font-size: 10.7pt; letter-spacing: .5pt; border-bottom-color: var(--brand); }
+          .section-title { color: var(--brand); font-family: var(--heading-font); font-size: var(--section-size); letter-spacing: .5pt; border-bottom-color: var(--brand); }
           h3 { font-family: var(--body-font); font-weight: 600; }
           .entry-sub { color: var(--brand); }
           .entry-date, .award-row time { font-family: var(--mono-font); }
@@ -539,16 +593,16 @@ def theme_css(theme_id: str, reference_style: str | None = None) -> str:
         """,
         "campus": """
           header { background: linear-gradient(105deg, var(--tint), transparent 58%); padding: 2.4mm 3mm 2.7mm; }
-          h1 { font-size: 27pt; font-weight: 600; letter-spacing: -.35pt; }
+          h1 { font-size: var(--name-size); font-weight: 600; letter-spacing: -.35pt; }
           .headline { font-weight: 600; }
           .summary { max-width: 95%; }
-          .section-title { color: var(--brand); font-size: 11.5pt; font-weight: 600; border-bottom-color: var(--line); }
+          .section-title { color: var(--brand); font-size: var(--section-size); font-weight: 600; border-bottom-color: var(--line); }
           h3 { font-weight: 600; }
           .skill-row strong { font-weight: 600; }
         """,
         "compact": """
           header { margin-bottom: 3mm; padding-bottom: 1.8mm; }
-          h1 { font-size: 22pt; }
+          h1 { font-size: var(--name-size); }
           .headline { font-size: 9.4pt; }
           .contact { margin-top: .7mm; font-size: var(--contact-size); }
           .summary { margin-top: 1.9mm; }
@@ -587,6 +641,7 @@ def make_html(
     name = esc(basics.get("name"))
     headline = esc(basics.get("headline") or target.get("role"))
     summary = esc(basics.get("summary"))
+    density = content_density(data)
 
     education = "".join(render_education(item) for item in data.get("education", []) if isinstance(item, dict))
     experience = "".join(render_entry(item) for item in data.get("experience", []) if isinstance(item, dict))
@@ -608,6 +663,17 @@ def make_html(
         detail = esc(award.get("detail"))
         date = esc(award.get("date"))
         award_rows.append(f'<div class="award-row"><span><strong>{left}</strong>{f" · {detail}" if detail else ""}</span><time>{date}</time></div>')
+
+    section_bodies = {
+        "education": education,
+        "experience": experience,
+        "projects": projects,
+        "skills": "".join(skill_rows),
+        "awards": "".join(award_rows),
+    }
+    rendered_sections = "".join(
+        render_section(labels[section], section_bodies[section]) for section in resolve_section_order(data)
+    )
 
     lang_attr = "en" if language == "en" else "zh-CN"
     style_label = reference["label"] if reference else theme["label"]
@@ -651,14 +717,15 @@ def make_html(
         ]
     )
     return f"""<!doctype html>
-<html lang="{lang_attr}" data-theme="{selected_theme}"{f' data-reference-style="{selected_reference}"' if selected_reference else ''}>
+<html lang="{lang_attr}" data-theme="{selected_theme}" data-density="{density}"{f' data-reference-style="{selected_reference}"' if selected_reference else ''}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <meta name="generator" content="Qiaomu Campus Resume · Core and reference style system">
   <meta name="resume-theme" content="{selected_theme}">
-  <meta name="resume-typography-system" content="1.4">
+  <meta name="resume-typography-system" content="1.5">
+  <meta name="resume-layout-system" content="adaptive-density-1.0">
   {f'<meta name="resume-reference-style" content="{selected_reference}">' if selected_reference else ''}
   <title>{title}</title>
   <style>
@@ -668,7 +735,7 @@ def make_html(
     {theme_css(selected_theme, selected_reference)}
   </style>
 </head>
-<body class="theme-{selected_theme}">
+<body class="theme-{selected_theme} density-{density}">
 <main>
   <header>
     <div class="identity">
@@ -680,11 +747,7 @@ def make_html(
     </div>
     {f'<p class="summary">{summary}</p>' if summary else ''}
   </header>
-  {render_section(labels['education'], education)}
-  {render_section(labels['experience'], experience)}
-  {render_section(labels['projects'], projects)}
-  {render_section(labels['skills'], ''.join(skill_rows))}
-  {render_section(labels['awards'], ''.join(award_rows))}
+  {rendered_sections}
 </main>
 </body>
 </html>

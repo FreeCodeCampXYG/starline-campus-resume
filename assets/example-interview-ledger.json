@@ -4,6 +4,16 @@
     "role": "后端开发实习",
     "jd_available": true
   },
+  "job_requirements": [
+    {
+      "requirement": "使用 Python 开发后端接口",
+      "priority": "must",
+      "evidence_ids": [
+        "project-api"
+      ],
+      "status": "supported"
+    }
+  ],
   "basics": {
     "name": "林乔",
     "phone": "13800000000",
@@ -26,9 +36,13 @@
       "start": "2025.03",
       "end": "2025.06",
       "ownership": "独立负责接口设计与自动化测试",
+      "problem": "为校园活动报名流程提供稳定 API",
       "actions": [
         "实现 6 个核心接口",
         "补充 42 个自动化测试"
+      ],
+      "methods": [
+        "使用 FastAPI 与 PostgreSQL 建模并实现权限校验"
       ],
       "result": "完成演示并通过课程验收",
       "proof": "课程验收记录与本人仓库提交",

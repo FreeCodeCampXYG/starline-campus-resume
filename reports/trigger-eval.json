@@ -2,8 +2,8 @@
   "ok": true,
   "missing_description_terms": [],
   "summary": {
-    "total": 23,
-    "passed": 23,
+    "total": 25,
+    "passed": 25,
     "false_positive": 0,
     "false_negative": 0,
     "pass_rate": 1.0
@@ -151,6 +151,34 @@
         ],
         "student_hits": [
           "校园招聘"
+        ],
+        "negative_hits": []
+      },
+      {
+        "prompt": "这是我的应届生旧简历，内容不要改，只美化排版并导出一页 PDF",
+        "family": "existing_resume_layout_only",
+        "expected_trigger": true,
+        "predicted_trigger": true,
+        "passed": true,
+        "resume_hits": [
+          "简历"
+        ],
+        "student_hits": [
+          "应届生"
+        ],
+        "negative_hits": []
+      },
+      {
+        "prompt": "我只有一份后端实习 JD，还没有简历，请从零问答并围绕岗位要求帮我写",
+        "family": "jd_guided_from_scratch",
+        "expected_trigger": true,
+        "predicted_trigger": true,
+        "passed": true,
+        "resume_hits": [
+          "简历"
+        ],
+        "student_hits": [
+          "实习"
         ],
         "negative_hits": []
       },
