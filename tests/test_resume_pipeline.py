@@ -7,7 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +43,76 @@ class ResumePipelineTests(unittest.TestCase):
         errors, _, counts = self.validator.validate_data(self.data)
         self.assertEqual(errors, [])
         self.assertGreaterEqual(counts["bullets"], 4)
+
+    def test_browser_override_has_priority(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            configured = Path(temp_dir) / "configured-browser"
+            configured.write_bytes(b"")
+            with patch.dict("os.environ", {"RESUME_BROWSER": str(configured)}, clear=False):
+                with patch.object(self.renderer.shutil, "which", return_value="/other/browser"):
+                    self.assertEqual(self.renderer.find_browser(), str(configured))
+
+    def test_windows_browser_candidates_include_common_installations(self) -> None:
+        with patch.object(self.renderer, "is_windows", return_value=True):
+            with patch.dict(
+                "os.environ",
+                {
+                    "RESUME_BROWSER": "",
+                    "PROGRAMFILES": r"C:\\Program Files",
+                    "PROGRAMFILES(X86)": r"C:\\Program Files (x86)",
+                    "LOCALAPPDATA": r"C:\\Users\\test\\AppData\\Local",
+                },
+                clear=False,
+            ):
+                candidates = self.renderer.browser_candidates()
+        self.assertIn(r"C:\Users\test\AppData\Local\Google\Chrome\Application\chrome.exe", candidates)
+        self.assertIn(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", candidates)
+
+    def test_windows_browser_cleanup_uses_taskkill_tree(self) -> None:
+        process = Mock(pid=1234)
+        process.poll.return_value = None
+        with patch.object(self.renderer, "is_windows", return_value=True):
+            with patch.object(self.renderer.subprocess, "run") as run:
+                self.renderer.terminate_browser(process)
+        run.assert_called_once_with(
+            ["taskkill", "/PID", "1234", "/T", "/F"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+        process.wait.assert_called()
+
+    def test_windows_browser_cleanup_falls_back_when_taskkill_fails(self) -> None:
+        process = Mock(pid=4321)
+        process.poll.return_value = None
+        with patch.object(self.renderer, "is_windows", return_value=True):
+            with patch.object(self.renderer.subprocess, "run", side_effect=OSError("taskkill unavailable")):
+                self.renderer.terminate_browser(process)
+        process.kill.assert_called_once_with()
+        process.wait.assert_called()
+
+    def test_posix_browser_cleanup_uses_process_group(self) -> None:
+        process = Mock(pid=5678)
+        process.poll.return_value = None
+        with patch.object(self.renderer, "is_windows", return_value=False):
+            with patch.object(self.renderer.os, "killpg", create=True) as killpg:
+                self.renderer.terminate_browser(process)
+        killpg.assert_called_once_with(process.pid, self.renderer.signal.SIGTERM)
+        process.wait.assert_called_once_with(timeout=5)
+
+    def test_pdf_inspection_uses_utf8_replacement_decoding(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pdf = Path(temp_dir) / "resume.pdf"
+            pdf.write_bytes(b"%PDF-" + b"0" * 100)
+            completed = Mock(returncode=0, stdout="姓名 " + "x" * 100)
+            with patch.object(self.validator.shutil, "which", side_effect=lambda name: "pdftotext" if name == "pdftotext" else None):
+                with patch.object(self.validator.subprocess, "run", return_value=completed) as run:
+                    errors, _, facts = self.validator.inspect_pdf(pdf, ["姓名"], theme="tech", require_theme_font=False)
+        self.assertEqual(errors, [])
+        self.assertEqual(facts["extracted_characters"], 103)
+        self.assertEqual(run.call_args.kwargs["encoding"], "utf-8")
+        self.assertEqual(run.call_args.kwargs["errors"], "replace")
 
     def test_skill_declares_all_four_marketing_routes(self) -> None:
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")

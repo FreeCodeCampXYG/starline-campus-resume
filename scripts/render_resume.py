@@ -754,20 +754,41 @@ def make_html(
 """
 
 
-def find_browser() -> str | None:
+def is_windows() -> bool:
+    return os.name == "nt"
+
+
+def browser_candidates() -> list[str]:
     configured = os.environ.get("RESUME_BROWSER", "").strip()
     candidates = [
         configured,
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
         "/Applications/Chromium.app/Contents/MacOS/Chromium",
-        shutil.which("google-chrome") or "",
-        shutil.which("chromium") or "",
-        shutil.which("chromium-browser") or "",
-        shutil.which("microsoft-edge") or "",
     ]
-    for candidate in candidates:
-        if candidate and Path(candidate).is_file():
+    if is_windows():
+        for variable in ("PROGRAMFILES", "PROGRAMFILES(X86)", "LOCALAPPDATA"):
+            base = os.environ.get(variable)
+            if not base:
+                continue
+            candidates.extend(
+                str(Path(base) / relative)
+                for relative in (
+                    "Google/Chrome/Application/chrome.exe",
+                    "Microsoft/Edge/Application/msedge.exe",
+                    "Chromium/Application/chrome.exe",
+                )
+            )
+        path_names = ("chrome.exe", "msedge.exe", "chromium.exe")
+    else:
+        path_names = ("google-chrome", "chromium", "chromium-browser", "microsoft-edge")
+    candidates.extend(shutil.which(name) or "" for name in path_names)
+    return candidates
+
+
+def find_browser() -> str | None:
+    for candidate in browser_candidates():
+        if candidate and Path(candidate).expanduser().is_file():
             return candidate
     return None
 
@@ -796,6 +817,47 @@ def find_tsanger_faces() -> dict[str, Path]:
     return faces
 
 
+def terminate_browser(process: subprocess.Popen[str]) -> None:
+    if process.poll() is not None:
+        return
+    if is_windows():
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            if process.poll() is None:
+                process.kill()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+        return
+
+    try:
+        os.killpg(process.pid, signal.SIGTERM)
+        process.wait(timeout=5)
+    except ProcessLookupError:
+        return
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            return
+        process.wait(timeout=5)
+
+
+def browser_popen_kwargs() -> dict[str, Any]:
+    if is_windows():
+        return {"creationflags": getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)}
+    return {"start_new_session": True}
+
+
 def print_pdf(browser: str, html_path: Path, pdf_path: Path) -> None:
     pdf_path.unlink(missing_ok=True)
     with tempfile.TemporaryDirectory(prefix="qiaomu-resume-chrome-") as profile:
@@ -811,38 +873,42 @@ def print_pdf(browser: str, html_path: Path, pdf_path: Path) -> None:
             f"--print-to-pdf={pdf_path}",
             html_path.as_uri(),
         ]
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
-        deadline = time.monotonic() + 30
-        stable_since: float | None = None
-        previous_size = -1
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            **browser_popen_kwargs(),
+        )
         generated = False
-        while time.monotonic() < deadline:
-            if pdf_path.is_file() and pdf_path.stat().st_size > 1024:
-                size = pdf_path.stat().st_size
-                if size == previous_size:
-                    stable_since = stable_since or time.monotonic()
-                    if time.monotonic() - stable_since >= 1.0:
-                        generated = pdf_path.read_bytes()[:5] == b"%PDF-"
-                        break
-                else:
-                    previous_size = size
-                    stable_since = None
-            if process.poll() is not None:
-                generated = pdf_path.is_file() and pdf_path.read_bytes()[:5] == b"%PDF-"
-                break
-            time.sleep(0.2)
-
-        if process.poll() is None:
+        stdout = ""
+        stderr = ""
+        try:
+            deadline = time.monotonic() + 30
+            stable_since: float | None = None
+            previous_size = -1
+            while time.monotonic() < deadline:
+                if pdf_path.is_file() and pdf_path.stat().st_size > 1024:
+                    size = pdf_path.stat().st_size
+                    if size == previous_size:
+                        stable_since = stable_since or time.monotonic()
+                        if time.monotonic() - stable_since >= 1.0:
+                            generated = pdf_path.read_bytes()[:5] == b"%PDF-"
+                            break
+                    else:
+                        previous_size = size
+                        stable_since = None
+                if process.poll() is not None:
+                    generated = pdf_path.is_file() and pdf_path.read_bytes()[:5] == b"%PDF-"
+                    break
+                time.sleep(0.2)
+        finally:
+            terminate_browser(process)
             try:
-                os.killpg(process.pid, signal.SIGTERM)
-                process.wait(timeout=5)
-            except (ProcessLookupError, subprocess.TimeoutExpired):
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
-                process.wait(timeout=5)
-        stdout, stderr = process.communicate(timeout=5)
+                stdout, stderr = process.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                stdout, stderr = process.communicate(timeout=5)
     if not generated:
         message = stderr.strip() or stdout.strip() or "浏览器未在 30 秒内生成有效 PDF"
         raise RuntimeError(message)
