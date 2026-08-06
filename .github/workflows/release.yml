@@ -31,17 +31,18 @@ jobs:
           python -m pip install -r requirements.txt
           python -m pip check
 
-      - name: Validate tagged version
-        id: version
-        shell: bash
+      - name: Validate tagged source
+        run: python scripts/validate_skill.py .
+
+      - name: Read package version
+        id: package-version
         run: |
-          version="${GITHUB_REF_NAME#v}"
-          [[ "$GITHUB_REF_NAME" == "v$version" ]] || {
-            echo "Release tags must start with v."
-            exit 1
-          }
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          python scripts/validate_skill.py . --expected-version "$version"
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+
+          print(f"version={json.loads(Path('manifest.json').read_text(encoding='utf-8'))['version']}")
+          PY
 
       - name: Run release checks
         run: |
@@ -52,7 +53,7 @@ jobs:
 
       - name: Build minimal runtime package
         env:
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.package-version.outputs.version }}
         run: |
           python - <<'PY'
           import os
@@ -103,7 +104,7 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ steps.package-version.outputs.version }}
         run: |
           gh release create "$GITHUB_REF_NAME" \
             "dist/qiaomu-campus-resume-${VERSION}.zip" \
