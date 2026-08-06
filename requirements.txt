@@ -1,0 +1,3 @@
+# Optional Poppler tools (pdftotext/pdfinfo/pdffonts) are preferred when installed.
+# pypdf provides the local PDF text-extraction fallback.
+pypdf>=5.0,<7.0
