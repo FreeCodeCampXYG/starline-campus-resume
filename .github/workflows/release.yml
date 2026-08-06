@@ -34,15 +34,16 @@ jobs:
       - name: Validate tagged source
         run: python scripts/validate_skill.py .
 
-      - name: Read package version
+      - name: Read release version from tag
         id: package-version
+        shell: bash
         run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
-          from pathlib import Path
-
-          print(f"version={json.loads(Path('manifest.json').read_text(encoding='utf-8'))['version']}")
-          PY
+          if [[ "$GITHUB_REF_NAME" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            echo "version=${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Release tags must use the vX.Y.Z format."
+            exit 1
+          fi
 
       - name: Run release checks
         run: |
@@ -56,7 +57,9 @@ jobs:
           VERSION: ${{ steps.package-version.outputs.version }}
         run: |
           python - <<'PY'
+          import json
           import os
+          import re
           import shutil
           import zipfile
           from pathlib import Path
@@ -88,6 +91,29 @@ jobs:
               target.parent.mkdir(parents=True, exist_ok=True)
               shutil.copy2(source, target)
 
+          manifest_path = staging / "manifest.json"
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["version"] = version
+          manifest["publication"] = re.sub(
+              r"release v\d+\.\d+\.\d+",
+              f"release v{version}",
+              str(manifest.get("publication", "")),
+          )
+          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+          skill_path = staging / "SKILL.md"
+          skill_text = skill_path.read_text(encoding="utf-8")
+          skill_text, replacements = re.subn(
+              r'^(\s*version:\s*)["\']?\d+\.\d+\.\d+["\']?',
+              rf'\g<1>"{version}"',
+              skill_text,
+              count=1,
+              flags=re.MULTILINE,
+          )
+          if replacements != 1:
+              raise SystemExit("Unable to update the SKILL.md version")
+          skill_path.write_text(skill_text, encoding="utf-8")
+
           expected = {f"{package_name}/{relative}" for relative in runtime_files}
           with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
               for relative in runtime_files:
@@ -105,8 +131,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.package-version.outputs.version }}
+        shell: bash
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            "dist/qiaomu-campus-resume-${VERSION}.zip" \
-            --title "qiaomu-campus-resume ${VERSION}" \
+          notes_file="$(mktemp)"
+          git tag -l --format='%(contents)' "$GITHUB_REF_NAME" > "$notes_file"
+
+          release_args=(
+            "$GITHUB_REF_NAME"
+            "dist/qiaomu-campus-resume-${VERSION}.zip"
+            --title "qiaomu-campus-resume ${VERSION}"
             --generate-notes
+          )
+          if [[ -s "$notes_file" ]]; then
+            release_args+=(--notes-file "$notes_file")
+          fi
+          gh release create "${release_args[@]}"
