@@ -58,15 +58,16 @@ class ResumePipelineTests(unittest.TestCase):
                 "os.environ",
                 {
                     "RESUME_BROWSER": "",
-                    "PROGRAMFILES": r"C:\\Program Files",
-                    "PROGRAMFILES(X86)": r"C:\\Program Files (x86)",
-                    "LOCALAPPDATA": r"C:\\Users\\test\\AppData\\Local",
+                    "PROGRAMFILES": r"C:\Program Files",
+                    "PROGRAMFILES(X86)": r"C:\Program Files (x86)",
+                    "LOCALAPPDATA": r"C:\Users\test\AppData\Local",
                 },
                 clear=False,
             ):
                 candidates = self.renderer.browser_candidates()
-        self.assertIn(r"C:\Users\test\AppData\Local\Google\Chrome\Application\chrome.exe", candidates)
-        self.assertIn(r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe", candidates)
+        normalized = [candidate.replace("\\", "/") for candidate in candidates]
+        self.assertIn("C:/Users/test/AppData/Local/Google/Chrome/Application/chrome.exe", normalized)
+        self.assertIn("C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe", normalized)
 
     def test_windows_browser_cleanup_uses_taskkill_tree(self) -> None:
         process = Mock(pid=1234)
