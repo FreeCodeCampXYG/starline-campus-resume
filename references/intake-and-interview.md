@@ -125,7 +125,7 @@
 从 0 创建、内容优化或 JD 定制在生成最终简历前运行：
 
 ```bash
-python scripts/assess_interview.py interview-ledger.json
+python3 scripts/assess_interview.py interview-ledger.json
 ```
 
 只有以下条件全部通过才是 `ready`：

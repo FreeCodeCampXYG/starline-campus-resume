@@ -43,13 +43,13 @@ metadata:
    - 有岗位 JD：同时提取必备条件、加分项、工作内容、关键词和不匹配项；没有 JD 时按目标岗位族生成通用版。
 3. **深挖并维护事实账本**：除纯排版快速路径外，优先沿最强经历逐层追问情境、个人职责、关键行动、结果、证据和面试可解释性；每 2–3 轮用不超过 5 条复述已确认事实与剩余缺口。把过程写入本地 `interview-ledger.json`，把可公开成果标注 `evidence_type`。遵循 [真实性与证据](references/content-integrity.md)。
 4. **确定策略**：必须读取 [简历写作与版式最佳实践](references/best-practices.md) 与 [内容与岗位策略](references/resume-strategy.md)，建立 `JD 要求 → 证据 → 简历位置` 映射；选择目标岗位、语言和一页/两页上限。按 [六主题系统](references/style-system.md) 选择核心主题，并遵循 [字体与印刷排版系统](references/typography-system.md)。用户提到 ResumeCollection、模板编号或要看更多简洁方案时，读取 [ResumeCollection 简洁参考目录](references/resume-collection-catalog.md)，选择单个重构预设或六预设对比输出。
-5. **通过生成门禁**：从 0 创建、内容优化或 JD 定制时，运行 `python scripts/assess_interview.py interview-ledger.json`；目标岗位、基础信息、教育、两项可用证据、技能证据链、关键疑点和本人确认全部通过后，才进入最终生成。纯排版快速路径改为“来源提取成功、事实摘要获确认、`source_resume` 证据类型完整、`validate_resume.py` 通过”四项门禁。用户中途要求停止时，交付事实摘要与精确缺口；除非对应门禁通过，否则只可生成明确标注的草稿 JSON/HTML，不把 PDF 伪装成最终版。
+5. **通过生成门禁**：从 0 创建、内容优化或 JD 定制时，运行 `python3 scripts/assess_interview.py interview-ledger.json`；目标岗位、基础信息、教育、两项可用证据、技能证据链、关键疑点和本人确认全部通过后，才进入最终生成。纯排版快速路径改为“来源提取成功、事实摘要获确认、`source_resume` 证据类型完整、`validate_resume.py` 通过”四项门禁。用户中途要求停止时，交付事实摘要与精确缺口；除非对应门禁通过，否则只可生成明确标注的草稿 JSON/HTML，不把 PDF 伪装成最终版。
 6. **确认并起草数据文件**：先向用户展示“目标岗位 / 核心经历 / 可用数字 / 技能 / 舍弃项 / 仍有疑点”的简短事实摘要，获得明确确认。再按 [数据契约](references/data-contract.md) 写出 `resume-data.json`；需要估算时必须保守、显式标记并由学生确认。
 7. **内容审校**：按 A-C-R-E 检查每条 bullet 的动作、情境/范围、结果与证据；检查时间线、个人/团队边界、技能与项目对应关系、数字证据、拼写、链接、章节顺序和岗位关键词自然度。运行 `validate_resume.py` 后逐条处理弱职责词、过长 bullet、孤立技能和结果信号不足的警告；不要为了“每条都有数字”而制造数字。
 8. **渲染**：默认只生成一份最合适的简历：
 
    ```bash
-   python scripts/render_resume.py resume-data.json --theme tech --output-dir output
+   python3 scripts/render_resume.py resume-data.json --theme tech --output-dir output
    ```
 
    默认根据岗位选择一个核心主题，并根据真实内容量自动选择 `sparse / balanced / dense` 密度，生成一份 HTML 与文本型 PDF；用户明确要求对比时，才使用 `--all-themes` 或参考预设批量命令。边框声明只允许页头和章节标题使用 `border-bottom` 分割线；禁止 `border-radius`、闭合边框、顶边、侧边线、侧边栏和卡片轮廓。无轮廓、无圆角的浅色页头 wash 或完整横向章节色带允许使用。中文 PDF 必须实际嵌入主题声明的本机字体；Kami 主题要求 TsangerJinKai02 W04，W05 仅在已安装时用于标题。
@@ -57,14 +57,14 @@ metadata:
    用户选择 ResumeCollection 参考预设时使用：
 
    ```bash
-   python scripts/render_resume.py resume-data.json --reference-style rc-071 --output-dir output
+   python3 scripts/render_resume.py resume-data.json --reference-style rc-071 --output-dir output
    # 或一次生成六个参考预设
-   python scripts/render_resume.py resume-data.json --all-reference-styles --output-dir output
+   python3 scripts/render_resume.py resume-data.json --all-reference-styles --output-dir output
    ```
 9. **验收**：单主题先运行 `validate_resume.py --theme <id>`；批量比较才运行：
 
    ```bash
-   python scripts/validate_style_set.py resume-data.json output/resume_六风格清单.json --output output/validation-all.json
+   python3 scripts/validate_style_set.py resume-data.json output/resume_六风格清单.json --output output/validation-all.json
    ```
 
    单主题输出仍可使用 `validate_resume.py --theme <id>`。再按 [视觉与 PDF 验收](references/visual-and-pdf.md) 将每页转为图片并逐页查看；确认无溢出、孤行、断裂、重叠、异常空白，且 `pdftotext` 能读出姓名、联系方式和标准章节。

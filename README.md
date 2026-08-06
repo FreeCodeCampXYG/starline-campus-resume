@@ -99,33 +99,32 @@ validation.json        内容、排版、字体和 PDF 检查结果
 
 ## 前置条件
 
-- [ ] Python 3.10+：Windows 可运行 `py -3 --version`，macOS/Linux 可运行 `python --version`；在已激活的虚拟环境中统一使用 `python`。
-- [ ] Python 回退依赖：运行 `py -3 -m pip install -r requirements.txt`（macOS/Linux 使用 `python -m pip install -r requirements.txt`）；其中 `pypdf` 用于没有 Poppler 时的本地 PDF 文本提取。
-- [ ] Chrome、Chromium 或 Edge：用于本地打印 PDF。Windows 通常可直接使用 Edge；也可设置 `RESUME_BROWSER` 指向浏览器可执行文件的完整路径。
-- [ ] Poppler（推荐）：提供 `pdfinfo`、`pdftotext` 和 `pdffonts`，用于完整 PDF 检查。macOS 可用 `brew install poppler`；Windows 可用 `winget install oschwartz10612.Poppler`，或安装其他可信发行版并将 `bin` 加入 PATH。
-- [ ] Kami 字体：只有选择 Kami 主题时需要已授权的 TsangerJinKai02 W04；字体不会随 Skill 分发。若自动检测不到，可设置 `KAMI_FONT_DIR`。
+- [ ] Python 3：运行 `python3 --version`；macOS 可用 `xcode-select --install` 安装命令行工具。
+- [ ] Chrome、Chromium 或 Edge：运行浏览器的 `--version`；用于本地打印 PDF。
+- [ ] Poppler：运行 `pdfinfo -v` 和 `pdftotext -v`；macOS 可用 `brew install poppler`。
+- [ ] Kami 字体：只有选择 Kami 主题时需要已授权的 TsangerJinKai02 W04；字体不会随 Skill 分发。
 
 ## 本地验证
 
 ```bash
-python scripts/validate_skill.py .
-python scripts/trigger_eval.py . --cases evals/trigger_cases.json --output reports/trigger-eval.json
-python -m unittest discover -s tests -v
-python scripts/assess_interview.py assets/example-interview-ledger.json
-python scripts/validate_resume.py assets/example-resume.json
+python3 scripts/validate_skill.py .
+python3 scripts/trigger_eval.py . --cases evals/trigger_cases.json --output reports/trigger-eval.json
+python3 -m unittest discover -s tests -v
+python3 scripts/assess_interview.py assets/example-interview-ledger.json
+python3 scripts/validate_resume.py assets/example-resume.json
 ```
 
 生成一份 Kami PDF：
 
 ```bash
-python scripts/render_resume.py assets/example-resume.json --theme kami --output-dir output --basename resume
+python3 scripts/render_resume.py assets/example-resume.json --theme kami --output-dir output --basename resume
 ```
 
 需要六主题对比时：
 
 ```bash
-python scripts/render_resume.py assets/example-resume.json --all-themes --output-dir output --basename resume
-python scripts/validate_style_set.py assets/example-resume.json output/resume_六风格清单.json --output output/validation-all.json
+python3 scripts/render_resume.py assets/example-resume.json --all-themes --output-dir output --basename resume
+python3 scripts/validate_style_set.py assets/example-resume.json output/resume_六风格清单.json --output output/validation-all.json
 ```
 
 命令通过不等于审美已验收。PDF 还必须按 `references/visual-and-pdf.md` 转成逐页图片并实际检查裁切、重叠、断行和异常空白。
@@ -142,11 +141,11 @@ python scripts/validate_style_set.py assets/example-resume.json output/resume_�
 
 | 问题 | 常见原因 | 解决 |
 |---|---|---|
-| 采访一直不能进入生成 | 只有一项完整经历、技能没有证据关联，或尚未明确确认 | 运行 `python scripts/assess_interview.py interview-ledger.json`，按 `next_questions` 补最关键的一项 |
-| 找不到 Chrome/Chromium/Edge | 渲染器未找到浏览器 | Windows 可先确认 Edge 已安装；也可设置 `RESUME_BROWSER="C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"`（PowerShell 使用 `$env:RESUME_BROWSER = "..."`）后重试 |
+| 采访一直不能进入生成 | 只有一项完整经历、技能没有证据关联，或尚未明确确认 | 运行 `python3 scripts/assess_interview.py interview-ledger.json`，按 `next_questions` 补最关键的一项 |
+| 找不到 Chrome/Chromium/Edge | 渲染器未找到浏览器 | 设置 `RESUME_BROWSER="/path/to/chrome"` 后重试 |
 | 旧 PDF 没有文字 | 文件是扫描件 | 先征得用户同意，再走本地 OCR；不要静默上传第三方 |
 | 内容超出一页 | 弱相关信息过多或 bullet 重复 | 先删弱信息、合并重复表达；正文不得低于 9.1pt，必要时使用两页 |
-| Kami 中文字体校验失败 | 未安装获授权的 TsangerJinKai02 W04，或 Windows 字体目录未被自动检测 | 安装字体，设置 `KAMI_FONT_DIR` 指向字体目录，或改用 ATS 经典、瑞士现代等本机字体主题 |
+| Kami 中文字体校验失败 | 未安装获授权的 TsangerJinKai02 W04 | 安装字体，或改用 ATS 经典、瑞士现代等本机字体主题 |
 | 检查发现圆角框或卡片边框 | HTML 出现禁止的边框声明 | 运行 `validate_resume.py --html resume.html`；只保留横向 `border-bottom` |
 
 ## 参考与致谢

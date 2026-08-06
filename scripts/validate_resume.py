@@ -333,14 +333,7 @@ def inspect_pdf(pdf: Path, expected: list[str], *, theme: str, require_theme_fon
 
     pdftotext = shutil.which("pdftotext")
     if pdftotext:
-        completed = subprocess.run(
-            [pdftotext, "-layout", str(pdf), "-"],
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-        )
+        completed = subprocess.run([pdftotext, "-layout", str(pdf), "-"], capture_output=True, text=True, check=False)
         extracted = completed.stdout.strip()
         facts["extracted_characters"] = len(extracted)
         if completed.returncode != 0 or len(extracted) < 100:

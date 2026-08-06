@@ -49,7 +49,7 @@
 生成单个参考预设：
 
 ```bash
-python scripts/render_resume.py resume-data.json \
+python3 scripts/render_resume.py resume-data.json \
   --reference-style rc-071 \
   --output-dir output
 ```
@@ -57,7 +57,7 @@ python scripts/render_resume.py resume-data.json \
 生成六个参考预设：
 
 ```bash
-python scripts/render_resume.py resume-data.json \
+python3 scripts/render_resume.py resume-data.json \
   --all-reference-styles \
   --output-dir output
 ```
@@ -65,7 +65,7 @@ python scripts/render_resume.py resume-data.json \
 批量验收：
 
 ```bash
-python scripts/validate_style_set.py \
+python3 scripts/validate_style_set.py \
   resume-data.json \
   output/resume_参考风格清单.json \
   --output output/validation-reference-styles.json

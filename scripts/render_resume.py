@@ -754,126 +754,47 @@ def make_html(
 """
 
 
-def _existing_path(value: str) -> str | None:
-    expanded = os.path.expandvars(os.path.expanduser(value.strip()))
-    path = Path(expanded)
-    if path.is_file():
-        return str(path)
-    return shutil.which(expanded)
-
-
-def _windows_browser_paths() -> list[Path]:
-    roots = [
-        os.environ.get("PROGRAMFILES"),
-        os.environ.get("PROGRAMFILES(X86)"),
-        os.environ.get("LOCALAPPDATA"),
-    ]
-    relative_paths = (
-        "Google/Chrome/Application/chrome.exe",
-        "Microsoft/Edge/Application/msedge.exe",
-        "Chromium/Application/chrome.exe",
-    )
-    return [Path(root) / relative for root in roots if root for relative in relative_paths]
-
-
 def find_browser() -> str | None:
     configured = os.environ.get("RESUME_BROWSER", "").strip()
-    candidates = [configured]
-    candidates.extend(
-        shutil.which(name) or ""
-        for name in ("google-chrome", "google-chrome-stable", "chrome", "chromium", "chromium-browser", "microsoft-edge", "msedge")
-    )
-    candidates.extend(
-        [
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-            "/Applications/Chromium.app/Contents/MacOS/Chromium",
-        ]
-    )
-    if sys.platform == "win32":
-        candidates.extend(str(path) for path in _windows_browser_paths())
+    candidates = [
+        configured,
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        shutil.which("google-chrome") or "",
+        shutil.which("chromium") or "",
+        shutil.which("chromium-browser") or "",
+        shutil.which("microsoft-edge") or "",
+    ]
     for candidate in candidates:
-        if candidate:
-            resolved = _existing_path(candidate)
-            if resolved:
-                return resolved
+        if candidate and Path(candidate).is_file():
+            return candidate
     return None
 
 
 def find_tsanger_faces() -> dict[str, Path]:
-    configured = os.environ.get("KAMI_FONT_DIR", "").strip()
-    directories: list[Path] = [Path(os.path.expandvars(os.path.expanduser(configured)))] if configured else []
-    directories.extend(
-        [
-            Path.home() / "Library" / "Fonts",
-            Path("/Library/Fonts"),
-            Path.home() / ".local" / "share" / "fonts" / "kami",
-            Path.home() / ".local" / "share" / "fonts",
-            Path.home() / ".fonts",
-        ]
-    )
-    if sys.platform == "win32":
-        windows_dir = os.environ.get("WINDIR", r"C:\\Windows")
-        local_app_data = os.environ.get("LOCALAPPDATA")
-        directories.extend(
-            [
-                Path(windows_dir) / "Fonts",
-                Path(local_app_data) / "Microsoft" / "Windows" / "Fonts" if local_app_data else Path(),
-            ]
-        )
+    configured = Path(os.environ.get("KAMI_FONT_DIR", "")).expanduser() if os.environ.get("KAMI_FONT_DIR") else None
+    directories = [
+        configured,
+        Path.home() / "Library" / "Fonts",
+        Path("/Library/Fonts"),
+        Path.home() / ".local" / "share" / "fonts" / "kami",
+        Path.home() / ".local" / "share" / "fonts",
+    ]
     faces: dict[str, Path] = {}
-    seen: set[str] = set()
-    expected = {"TsangerJinKai02-W04.ttf": "regular", "TsangerJinKai02-W05.ttf": "medium"}
     for directory in directories:
-        if not str(directory) or not directory.is_dir() or str(directory).casefold() in seen:
+        if not directory or not directory.is_dir():
             continue
-        seen.add(str(directory).casefold())
-        try:
-            files = {path.name.casefold(): path for path in directory.iterdir() if path.is_file()}
-        except OSError:
-            continue
-        for filename, weight in expected.items():
-            candidate = files.get(filename.casefold())
-            if candidate and candidate.stat().st_size > 100_000:
+        for weight, filename in (("regular", "TsangerJinKai02-W04.ttf"), ("medium", "TsangerJinKai02-W05.ttf")):
+            candidate = directory / filename
+            if candidate.is_file() and candidate.stat().st_size > 100_000:
                 faces.setdefault(weight, candidate)
     return faces
 
 
-def _terminate_browser(process: subprocess.Popen[str]) -> None:
-    if os.name != "posix":
-        if process.poll() is None:
-            try:
-                subprocess.run(
-                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                    capture_output=True,
-                    text=True,
-                    check=False,
-                    timeout=5,
-                )
-                process.wait(timeout=5)
-            except (OSError, subprocess.TimeoutExpired):
-                if process.poll() is None:
-                    process.kill()
-                    process.wait(timeout=5)
-        time.sleep(1)
-        return
-    if process.poll() is not None:
-        return
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-        process.wait(timeout=5)
-    except (ProcessLookupError, subprocess.TimeoutExpired):
-        if process.poll() is None:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            process.wait(timeout=5)
-
-
 def print_pdf(browser: str, html_path: Path, pdf_path: Path) -> None:
     pdf_path.unlink(missing_ok=True)
-    with tempfile.TemporaryDirectory(prefix="qiaomu-resume-chrome-", ignore_cleanup_errors=True) as profile:
+    with tempfile.TemporaryDirectory(prefix="qiaomu-resume-chrome-") as profile:
         command = [
             browser,
             "--headless=new",
@@ -886,16 +807,7 @@ def print_pdf(browser: str, html_path: Path, pdf_path: Path) -> None:
             f"--print-to-pdf={pdf_path}",
             html_path.as_uri(),
         ]
-        popen_kwargs: dict[str, Any] = {
-            "stdout": subprocess.PIPE,
-            "stderr": subprocess.PIPE,
-            "text": True,
-        }
-        if os.name == "posix":
-            popen_kwargs["start_new_session"] = True
-        elif hasattr(subprocess, "CREATE_NEW_PROCESS_GROUP"):
-            popen_kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP
-        process = subprocess.Popen(command, **popen_kwargs)
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
         deadline = time.monotonic() + 30
         stable_since: float | None = None
         previous_size = -1
@@ -917,12 +829,16 @@ def print_pdf(browser: str, html_path: Path, pdf_path: Path) -> None:
             time.sleep(0.2)
 
         if process.poll() is None:
-            _terminate_browser(process)
-        try:
-            stdout, stderr = process.communicate(timeout=5)
-        except subprocess.TimeoutExpired:
-            _terminate_browser(process)
-            stdout, stderr = process.communicate(timeout=5)
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+                process.wait(timeout=5)
+            except (ProcessLookupError, subprocess.TimeoutExpired):
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait(timeout=5)
+        stdout, stderr = process.communicate(timeout=5)
     if not generated:
         message = stderr.strip() or stdout.strip() or "浏览器未在 30 秒内生成有效 PDF"
         raise RuntimeError(message)

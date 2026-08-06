@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
-import os
 import subprocess
-import sys
 import tempfile
 import unittest
-from unittest import mock
 from pathlib import Path
 
 
@@ -184,50 +181,11 @@ class ResumePipelineTests(unittest.TestCase):
         self.assertLess(formal.index("Palatino"), formal.index("Songti SC"))
         self.assertIn('<span class="dot">·</span>', formal)
 
-    def test_browser_override_expands_environment_variables(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            browser = Path(temp_dir) / "chrome.exe"
-            browser.write_bytes(b"")
-            with mock.patch.dict(os.environ, {"RESUME_BROWSER": "$RESUME_TEST_BROWSER", "RESUME_TEST_BROWSER": str(browser)}, clear=False):
-                self.assertEqual(Path(self.renderer.find_browser()), browser)
-
-    def test_windows_browser_paths_include_program_files(self) -> None:
-        with mock.patch.dict(os.environ, {"PROGRAMFILES": r"C:\\Program Files", "PROGRAMFILES(X86)": r"C:\\Program Files (x86)", "LOCALAPPDATA": r"C:\\Users\\test\\AppData\\Local"}, clear=False):
-            paths = {str(path) for path in self.renderer._windows_browser_paths()}
-        self.assertTrue(any("Google" in path and path.endswith("chrome.exe") for path in paths))
-        self.assertTrue(any("Microsoft" in path and path.endswith("msedge.exe") for path in paths))
-
-    def test_tsanger_faces_find_case_insensitive_configured_files(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            directory = Path(temp_dir)
-            regular = directory / "tsangerjinkai02-w04.TTF"
-            medium = directory / "TSANGERJINKAI02-W05.ttf"
-            regular.write_bytes(b"0" * 100_001)
-            medium.write_bytes(b"1" * 100_001)
-            with mock.patch.dict(os.environ, {"KAMI_FONT_DIR": str(directory)}, clear=False):
-                faces = self.renderer.find_tsanger_faces()
-        self.assertEqual(faces["regular"], regular)
-        self.assertEqual(faces["medium"], medium)
-
-    def test_windows_cleanup_does_not_use_killpg(self) -> None:
-        process = mock.Mock()
-        process.poll.side_effect = [None, 0]
-        with (
-            mock.patch.object(self.renderer.os, "name", "nt"),
-            mock.patch.object(self.renderer.os, "killpg", create=True) as killpg,
-            mock.patch.object(self.renderer.subprocess, "run") as taskkill,
-            mock.patch.object(self.renderer.time, "sleep"),
-        ):
-            self.renderer._terminate_browser(process)
-        process.terminate.assert_not_called()
-        taskkill.assert_called_once()
-        killpg.assert_not_called()
-
     def test_renderer_cli_emits_html(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             completed = subprocess.run(
                 [
-                    sys.executable,
+                    "python3",
                     str(ROOT / "scripts/render_resume.py"),
                     str(ROOT / "assets/example-resume.json"),
                     "--output-dir",
@@ -247,7 +205,7 @@ class ResumePipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             completed = subprocess.run(
                 [
-                    sys.executable,
+                    "python3",
                     str(ROOT / "scripts/render_resume.py"),
                     str(ROOT / "assets/example-resume.json"),
                     "--output-dir",
@@ -271,7 +229,7 @@ class ResumePipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             completed = subprocess.run(
                 [
-                    sys.executable,
+                    "python3",
                     str(ROOT / "scripts/render_resume.py"),
                     str(ROOT / "assets/example-resume.json"),
                     "--output-dir",
@@ -295,6 +253,7 @@ class ResumePipelineTests(unittest.TestCase):
 
     def test_style_set_validator_rejects_incomplete_manifest(self) -> None:
         sys_path = str(ROOT / "scripts")
+        import sys
 
         if sys_path not in sys.path:
             sys.path.insert(0, sys_path)
@@ -305,6 +264,7 @@ class ResumePipelineTests(unittest.TestCase):
 
     def test_style_set_validator_rejects_incomplete_reference_manifest(self) -> None:
         sys_path = str(ROOT / "scripts")
+        import sys
 
         if sys_path not in sys.path:
             sys.path.insert(0, sys_path)
