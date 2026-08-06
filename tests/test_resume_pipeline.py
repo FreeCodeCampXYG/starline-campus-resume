@@ -3,9 +3,11 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,7 +30,16 @@ class ResumePipelineTests(unittest.TestCase):
         cls.renderer = load_module("render_resume", ROOT / "scripts/render_resume.py")
         cls.interview_validator = load_module("assess_interview", ROOT / "scripts/assess_interview.py")
 
-    def test_example_data_passes(self) -> None:
+    def test_kami_font_dir_finds_configured_faces(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            font_dir = Path(temp_dir)
+            for filename in ("TsangerJinKai02-W04.ttf", "TsangerJinKai02-W05.ttf"):
+                (font_dir / filename).write_bytes(b"0" * 100_001)
+            with patch.dict("os.environ", {"KAMI_FONT_DIR": temp_dir}, clear=False):
+                faces = self.renderer.find_tsanger_faces()
+            self.assertEqual(faces["regular"], font_dir / "TsangerJinKai02-W04.ttf")
+            self.assertEqual(faces["medium"], font_dir / "TsangerJinKai02-W05.ttf")
+
         errors, _, counts = self.validator.validate_data(self.data)
         self.assertEqual(errors, [])
         self.assertGreaterEqual(counts["bullets"], 4)
@@ -185,7 +196,7 @@ class ResumePipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             completed = subprocess.run(
                 [
-                    "python3",
+                    sys.executable,
                     str(ROOT / "scripts/render_resume.py"),
                     str(ROOT / "assets/example-resume.json"),
                     "--output-dir",
@@ -205,7 +216,7 @@ class ResumePipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             completed = subprocess.run(
                 [
-                    "python3",
+                    sys.executable,
                     str(ROOT / "scripts/render_resume.py"),
                     str(ROOT / "assets/example-resume.json"),
                     "--output-dir",
@@ -229,7 +240,7 @@ class ResumePipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_dir:
             completed = subprocess.run(
                 [
-                    "python3",
+                    sys.executable,
                     str(ROOT / "scripts/render_resume.py"),
                     str(ROOT / "assets/example-resume.json"),
                     "--output-dir",

@@ -15,6 +15,7 @@ REQUIRED_FILES = [
     "LICENSE.txt",
     "LICENSE",
     "THIRD_PARTY_NOTICES.md",
+    "requirements.txt",
     "manifest.json",
     "agents/interface.yaml",
     "assets/example-interview-ledger.json",
@@ -41,6 +42,7 @@ REQUIRED_FILES = [
 def main() -> None:
     parser = argparse.ArgumentParser(description="验证 qiaomu-campus-resume 技能包结构。")
     parser.add_argument("skill_dir", nargs="?", default=".", help="技能目录")
+    parser.add_argument("--expected-version", help="要求 manifest.json 匹配的语义化版本")
     args = parser.parse_args()
     root = Path(args.skill_dir).expanduser().resolve()
     errors: list[str] = []
@@ -66,31 +68,40 @@ def main() -> None:
         if not (root / link).is_file():
             errors.append(f"SKILL.md 引用了不存在的文件：{link}")
 
-    for relative in (
+    json_files = (
         "manifest.json",
         "assets/example-interview-ledger.json",
         "assets/example-resume.json",
         "evals/trigger_cases.json",
         "evals/output_cases.json",
-    ):
+    )
+    json_documents: dict[str, object] = {}
+    for relative in json_files:
         path = root / relative
         if path.is_file():
             try:
-                json.loads(path.read_text(encoding="utf-8"))
+                json_documents[relative] = json.loads(path.read_text(encoding="utf-8"))
             except json.JSONDecodeError as exc:
                 errors.append(f"{relative} JSON 无效：{exc}")
 
-    manifest_path = root / "manifest.json"
-    if manifest_path.is_file():
-        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = json_documents.get("manifest.json")
+    if not isinstance(manifest, dict):
+        errors.append("manifest.json 根节点必须是对象")
+    else:
         if manifest.get("name") != "qiaomu-campus-resume":
             errors.append("manifest name 不匹配")
-        if not re.match(r"^\d+\.\d+\.\d+$", str(manifest.get("version", ""))):
+        manifest_version = str(manifest.get("version", ""))
+        if not re.fullmatch(r"\d+\.\d+\.\d+", manifest_version):
             errors.append("manifest version 不是语义化版本")
+        if args.expected_version:
+            if not re.fullmatch(r"\d+\.\d+\.\d+", args.expected_version):
+                errors.append("--expected-version 不是语义化版本")
+            elif manifest_version != args.expected_version:
+                errors.append("manifest.json 版本与 --expected-version 不一致")
         if manifest.get("maturity_tier") != "production":
             warnings.append("maturity_tier 不是 production")
         version_match = re.search(r'^\s*version:\s*["\']?([^"\'\s]+)', skill_text, re.MULTILINE)
-        if version_match and manifest.get("version") != version_match.group(1):
+        if version_match and manifest_version != version_match.group(1):
             errors.append("SKILL.md 与 manifest.json 版本不一致")
 
     renderer_path = root / "scripts/render_resume.py"

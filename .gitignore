@@ -13,3 +13,5 @@ reports/*
 
 output/
 *.tmp
+/.idea
+/.idea/*

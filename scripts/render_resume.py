@@ -774,12 +774,16 @@ def find_browser() -> str | None:
 
 def find_tsanger_faces() -> dict[str, Path]:
     configured = Path(os.environ.get("KAMI_FONT_DIR", "")).expanduser() if os.environ.get("KAMI_FONT_DIR") else None
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    windows_dir = os.environ.get("WINDIR") or os.environ.get("SystemRoot")
     directories = [
         configured,
         Path.home() / "Library" / "Fonts",
         Path("/Library/Fonts"),
         Path.home() / ".local" / "share" / "fonts" / "kami",
         Path.home() / ".local" / "share" / "fonts",
+        Path(local_app_data) / "Microsoft" / "Windows" / "Fonts" if local_app_data else None,
+        Path(windows_dir) / "Fonts" if windows_dir else None,
     ]
     faces: dict[str, Path] = {}
     for directory in directories:

@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip check
+
+      - name: Validate tagged version
+        id: version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          [[ "$GITHUB_REF_NAME" == "v$version" ]] || {
+            echo "Release tags must start with v."
+            exit 1
+          }
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          python scripts/validate_skill.py . --expected-version "$version"
+
+      - name: Run release checks
+        run: |
+          python scripts/trigger_eval.py . --cases evals/trigger_cases.json
+          python -m unittest discover -s tests -v
+          python scripts/assess_interview.py assets/example-interview-ledger.json
+          python scripts/validate_resume.py assets/example-resume.json
+
+      - name: Build minimal runtime package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          python - <<'PY'
+          import os
+          import shutil
+          import zipfile
+          from pathlib import Path
+
+          version = os.environ["VERSION"]
+          root = Path.cwd()
+          package_name = f"qiaomu-campus-resume-{version}"
+          staging = root / "dist" / package_name
+          archive = root / "dist" / f"{package_name}.zip"
+          runtime_files = [
+              "SKILL.md",
+              "manifest.json",
+              "requirements.txt",
+              "agents/interface.yaml",
+              "scripts/assess_interview.py",
+              "scripts/extract_resume.py",
+              "scripts/render_resume.py",
+              "scripts/validate_resume.py",
+              "scripts/validate_style_set.py",
+          ]
+          runtime_files.extend(path.relative_to(root).as_posix() for path in sorted((root / "references").glob("*.md")))
+
+          shutil.rmtree(staging, ignore_errors=True)
+          for relative in runtime_files:
+              source = root / relative
+              if not source.is_file():
+                  raise SystemExit(f"Missing runtime file: {relative}")
+              target = staging / relative
+              target.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(source, target)
+
+          expected = {f"{package_name}/{relative}" for relative in runtime_files}
+          with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
+              for relative in runtime_files:
+                  bundle.write(staging / relative, f"{package_name}/{relative}")
+          with zipfile.ZipFile(archive) as bundle:
+              actual = set(bundle.namelist())
+          if actual != expected:
+              unexpected = sorted(actual - expected)
+              missing = sorted(expected - actual)
+              raise SystemExit(f"Unexpected archive entries: {unexpected}; missing archive entries: {missing}")
+          print(f"Created minimal runtime package: {archive}")
+          PY
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/qiaomu-campus-resume-${VERSION}.zip" \
+            --title "qiaomu-campus-resume ${VERSION}" \
+            --generate-notes
