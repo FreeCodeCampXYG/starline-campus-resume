@@ -1,4 +1,4 @@
-# 乔木大学生简历
+# 乔木通用求职简历
 
 > 不知道简历该写什么？不用填巨型表格。让 AI 每次只问一个问题，把真正做过的项目、实习和校园经历聊透，再生成一份可投递 PDF。
 
@@ -99,32 +99,46 @@ validation.json        内容、排版、字体和 PDF 检查结果
 
 ## 前置条件
 
-- [ ] Python 3：运行 `python3 --version`；macOS 可用 `xcode-select --install` 安装命令行工具。
-- [ ] Chrome、Chromium 或 Edge：运行浏览器的 `--version`；用于本地打印 PDF。
-- [ ] Poppler：运行 `pdfinfo -v` 和 `pdftotext -v`；macOS 可用 `brew install poppler`。
+命令中的 `<python>`：macOS/Linux 使用 `python3`；Windows 优先使用 `py -3`，也可使用已配置的 `python`。
+
+- [ ] Python 3：运行 `<python> --version`；macOS 可用 `xcode-select --install` 安装命令行工具。
+- [ ] Chrome、Chromium 或 Edge：用于本地打印 PDF。Windows 会自动发现默认安装位置的 Chrome/Edge；未发现时再配置 `RESUME_BROWSER`。
+- [ ] Poppler：完整 PDF 验收需要 `pdfinfo`、`pdftotext` 和 `pdffonts`；macOS 可用 `brew install poppler`。`requirements.txt` 中的 `pypdf` 仅是本地 PDF 文本提取的备用实现，不能替代完整 Poppler 验收。
 - [ ] Kami 字体：只有选择 Kami 主题时需要已授权的 TsangerJinKai02 W04；字体不会随 Skill 分发。
+
+### Windows 补充
+
+安装并将 Poppler 的 `Library\\bin` 加入 `PATH` 后，运行 `pdfinfo -v`、`pdftotext -v` 和 `pdffonts -v` 确认可用。浏览器自动发现失败时可指定路径：
+
+```powershell
+$env:RESUME_BROWSER = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+```
+
+```cmd
+set RESUME_BROWSER=C:\Program Files\Google\Chrome\Application\chrome.exe
+```
 
 ## 本地验证
 
 ```bash
-python3 scripts/validate_skill.py .
-python3 scripts/trigger_eval.py . --cases evals/trigger_cases.json --output reports/trigger-eval.json
-python3 -m unittest discover -s tests -v
-python3 scripts/assess_interview.py assets/example-interview-ledger.json
-python3 scripts/validate_resume.py assets/example-resume.json
+<python> scripts/validate_skill.py .
+<python> scripts/trigger_eval.py . --cases evals/trigger_cases.json --output reports/trigger-eval.json
+<python> -m unittest discover -s tests -v
+<python> scripts/assess_interview.py assets/example-interview-ledger.json
+<python> scripts/validate_resume.py assets/example-resume.json
 ```
 
 生成一份 Kami PDF：
 
 ```bash
-python3 scripts/render_resume.py assets/example-resume.json --theme kami --output-dir output --basename resume
+<python> scripts/render_resume.py assets/example-resume.json --theme kami --output-dir output --basename resume
 ```
 
 需要六主题对比时：
 
 ```bash
-python3 scripts/render_resume.py assets/example-resume.json --all-themes --output-dir output --basename resume
-python3 scripts/validate_style_set.py assets/example-resume.json output/resume_六风格清单.json --output output/validation-all.json
+<python> scripts/render_resume.py assets/example-resume.json --all-themes --output-dir output --basename resume
+<python> scripts/validate_style_set.py assets/example-resume.json output/resume_六风格清单.json --output output/validation-all.json
 ```
 
 命令通过不等于审美已验收。PDF 还必须按 `references/visual-and-pdf.md` 转成逐页图片并实际检查裁切、重叠、断行和异常空白。
@@ -141,7 +155,7 @@ python3 scripts/validate_style_set.py assets/example-resume.json output/resume_�
 
 | 问题 | 常见原因 | 解决 |
 |---|---|---|
-| 采访一直不能进入生成 | 只有一项完整经历、技能没有证据关联，或尚未明确确认 | 运行 `python3 scripts/assess_interview.py interview-ledger.json`，按 `next_questions` 补最关键的一项 |
+| 采访一直不能进入生成 | 只有一项完整经历、技能没有证据关联，或尚未明确确认 | 运行 `<python> scripts/assess_interview.py interview-ledger.json`，按 `next_questions` 补最关键的一项 |
 | 找不到 Chrome/Chromium/Edge | 渲染器未找到浏览器 | 设置 `RESUME_BROWSER="/path/to/chrome"` 后重试 |
 | 旧 PDF 没有文字 | 文件是扫描件 | 先征得用户同意，再走本地 OCR；不要静默上传第三方 |
 | 内容超出一页 | 弱相关信息过多或 bullet 重复 | 先删弱信息、合并重复表达；正文不得低于 9.1pt，必要时使用两页 |

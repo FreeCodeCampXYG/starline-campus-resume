@@ -122,7 +122,7 @@ def validate_set(data: dict[str, Any], manifest: dict[str, Any]) -> dict[str, An
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="一次检查六套核心主题或参考预设大学生简历 HTML/PDF。")
+    parser = argparse.ArgumentParser(description="一次检查六套核心主题或参考预设求职简历 HTML/PDF。")
     parser.add_argument("input", help="resume-data.json 路径")
     parser.add_argument("manifest", help="render_resume.py 批量模式生成的风格清单")
     parser.add_argument("--output", "-o", help="汇总验证报告输出路径")

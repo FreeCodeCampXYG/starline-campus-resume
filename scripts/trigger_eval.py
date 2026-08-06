@@ -109,7 +109,7 @@ def evaluate(root: Path, cases_path: Path) -> dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="评估乔木大学生简历技能的触发边界。")
+    parser = argparse.ArgumentParser(description="评估乔木通用求职简历技能的触发边界。")
     parser.add_argument("skill_dir", nargs="?", default=".", help="技能目录")
     parser.add_argument("--cases", default="evals/trigger_cases.json", help="触发用例 JSON")
     parser.add_argument("--output", "-o", help="报告输出路径")

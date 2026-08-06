@@ -59,9 +59,19 @@ def main() -> None:
     skill_text = skill_path.read_text(encoding="utf-8") if skill_path.is_file() else ""
     if not re.search(r"^name:\s*qiaomu-campus-resume\s*$", skill_text, re.MULTILINE):
         errors.append("SKILL.md 名称不匹配")
-    if "description:" not in skill_text or "大学生" not in skill_text or "PDF" not in skill_text:
+    if "description:" not in skill_text or "求职者" not in skill_text or "PDF" not in skill_text:
         errors.append("SKILL.md description 缺少关键路由信息")
-    for required in ("四种能力路由", "从 0 问答写简历", "排版快速路径", "提供 JD 针对性定制", "一次生成多种风格"):
+    for required in (
+        "四种能力路由",
+        "从 0 问答写简历",
+        "排版快速路径",
+        "提供 JD 针对性定制",
+        "一次生成多种风格",
+        "保护 Skill 本体",
+        "未经单独确认不得自行修复 Skill 文件",
+        "Skill 安装目录",
+        "<python>",
+    ):
         if required not in skill_text:
             errors.append(f"SKILL.md 缺少宣传能力路由：{required}")
     for link in re.findall(r"\]\(([^)]+\.md)\)", skill_text):

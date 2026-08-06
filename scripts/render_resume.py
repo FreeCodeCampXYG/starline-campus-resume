@@ -319,7 +319,7 @@ REFERENCE_STYLES: dict[str, dict[str, Any]] = {
 LABELS = {
     "zh-CN": {
         "education": "教育经历",
-        "experience": "实习与实践",
+        "experience": "工作经历",
         "projects": "项目经历",
         "skills": "专业技能",
         "awards": "奖项与证书",
@@ -335,7 +335,7 @@ LABELS = {
 
 BILINGUAL_LABELS = {
     "education": "教育经历 · EDUCATION",
-    "experience": "实习与实践 · EXPERIENCE",
+    "experience": "工作经历 · EXPERIENCE",
     "projects": "项目经历 · PROJECTS",
     "skills": "专业技能 · SKILLS",
     "awards": "奖项与证书 · AWARDS",
@@ -968,7 +968,7 @@ def render_one(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="将结构化大学生简历渲染为本地 HTML 与 PDF。")
+    parser = argparse.ArgumentParser(description="将结构化求职简历渲染为本地 HTML 与 PDF。")
     parser.add_argument("input", help="resume-data.json 路径")
     parser.add_argument("--output-dir", "-o", default="output", help="输出目录")
     parser.add_argument("--basename", help="输出文件名（不含扩展名）；默认读取 JSON filename")

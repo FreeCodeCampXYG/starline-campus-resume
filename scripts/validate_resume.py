@@ -369,7 +369,7 @@ def inspect_pdf(pdf: Path, expected: list[str], *, theme: str, require_theme_fon
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="检查大学生简历数据与可选 PDF 产物。")
+    parser = argparse.ArgumentParser(description="检查求职简历数据与可选 PDF 产物。")
     parser.add_argument("input", help="resume-data.json 路径")
     parser.add_argument("--html", help="同时检查生成的 HTML 样式与字体声明")
     parser.add_argument("--pdf", help="同时检查生成的 PDF")

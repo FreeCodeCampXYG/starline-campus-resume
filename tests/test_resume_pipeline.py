@@ -118,7 +118,16 @@ class ResumePipelineTests(unittest.TestCase):
         skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
         interface = (ROOT / "agents/interface.yaml").read_text(encoding="utf-8")
         triggers = json.loads((ROOT / "evals/trigger_cases.json").read_text(encoding="utf-8"))
-        for term in ("从 0 问答写简历", "提供旧简历优化", "提供 JD 针对性定制", "一次生成多种风格"):
+        for term in (
+            "从 0 问答写简历",
+            "提供旧简历优化",
+            "提供 JD 针对性定制",
+            "一次生成多种风格",
+            "保护 Skill 本体",
+            "未经单独确认不得自行修复 Skill 文件",
+            "Skill 安装目录",
+            "<python>",
+        ):
             self.assertIn(term, skill)
         self.assertIn("source_resume", interface)
         self.assertIn("--all-themes", interface)
@@ -192,14 +201,18 @@ class ResumePipelineTests(unittest.TestCase):
         self.assertIn('data-density="sparse"', rendered)
         self.assertIn("教育经历", rendered)
 
-    def test_section_order_is_configurable_without_hiding_sections(self) -> None:
+    def test_experience_label_supports_work_history(self) -> None:
+        rendered = self.renderer.make_html(self.data)
+        self.assertIn("工作经历", rendered)
+        self.assertNotIn("实习与实践", rendered)
+
         reordered = json.loads(json.dumps(self.data, ensure_ascii=False))
         reordered["section_order"] = ["education", "skills", "projects", "experience", "awards"]
         rendered = self.renderer.make_html(reordered)
         self.assertLess(rendered.index("教育经历"), rendered.index("专业技能"))
         self.assertLess(rendered.index("专业技能"), rendered.index("项目经历"))
-        self.assertLess(rendered.index("项目经历"), rendered.index("实习与实践"))
-        self.assertLess(rendered.index("实习与实践"), rendered.index("奖项与证书"))
+        self.assertLess(rendered.index("项目经历"), rendered.index("工作经历"))
+        self.assertLess(rendered.index("工作经历"), rendered.index("奖项与证书"))
 
     def test_adaptive_density_routes_sparse_and_dense_content(self) -> None:
         self.assertEqual(self.renderer.content_density(self.data), "sparse")
