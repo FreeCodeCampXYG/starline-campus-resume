@@ -66,9 +66,9 @@ jobs:
 
           version = os.environ["VERSION"]
           root = Path.cwd()
-          package_name = f"qiaomu-campus-resume-{version}"
+          package_name = "qiaomu-campus-resume"
           staging = root / "dist" / package_name
-          archive = root / "dist" / f"{package_name}.zip"
+          archive = root / "dist" / f"{package_name}-{version}.zip"
           runtime_files = [
               "SKILL.md",
               "manifest.json",
