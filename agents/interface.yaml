@@ -1,7 +1,7 @@
 interface:
-  display_name: "乔木通用求职简历"
-  short_description: "从零访谈、JD 定制、旧简历美化，并生成单份或六风格 PDF"
-  default_prompt: "使用 $qiaomu-campus-resume 为学生、应届生、早期职业或有真实工作经历的社会求职者制作可投递简历。先在四种入口中选择最短可靠路径：从 0 问答、旧简历优化、JD 针对性定制、多风格批量生成。从 0 或需要补内容时，读取对话访谈协议，一次只问一个核心问题并附当前判断，沿最强经历深挖个人贡献、行动、结果、证据和面试可解释性；维护 interview-ledger.json，运行 assess_interview.py 并获得本人确认后再生成最终 PDF。用户只要求美化或重排旧简历时，运行 extract_resume.py，复述提取事实并获得一次确认，以 source_resume 标记事实，运行 validate_resume.py；不要强迫用户重新完成两项深度访谈，也不要未经请求改写内容。用户提供 JD 时，建立 JD 要求—已有证据/缺口—简历位置映射，只写有证据的关键词。默认生成一份最合适的单栏 HTML/PDF，并按真实内容量应用 sparse、balanced 或 dense 密度；用户明确要求多种风格时，固定同一份事实并使用 --all-themes 一次生成六套核心主题、清单和验证报告。禁止编造经历和数字；边框声明只允许横向 border-bottom，禁止 border-radius、圆角框、闭合边框、顶边、侧边线和侧边栏。"
+  display_name: "Starline 求职简历工作台"
+  short_description: "基于事实源与岗位投影生成可编辑 HTML 和本地 A4 PDF 简历"
+  default_prompt: "使用 $starline-campus-resume 制作求职简历。先判断从零访谈、旧简历导入、JD 定制或岗位投影入口；将长期事实与本次岗位投影分开，所有经历、数字和技能都必须有证据。默认一次只问一个问题并获得用户确认，再生成单栏 HTML/PDF。用户只要求美化时保留原事实；用户要求换岗位时复用同一事实源而不是复制出漂移的主简历。运行 validate_resume.py，说明缺失的 PDF/字体工具证据；不上传个人材料，不生成二维码、推广图、头像或远程资源。"
   examples:
     - "我上传了旧简历和前端实习 JD，帮我改成一页有细分割线但无圆角框的 Kami 风格 PDF"
     - "我没有简历，访谈我并生成一份后端校招简历"

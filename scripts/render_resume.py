@@ -125,11 +125,11 @@ THEMES: dict[str, dict[str, Any]] = {
         "use_case": "软件、AI、数据、算法、DevOps 与工程岗位",
         "page": "#FFFFFF",
         "paper": "#FFFFFF",
-        "ink": "#15212B",
-        "muted": "#5C6871",
-        "line": "#D8E0E5",
-        "brand": "#00649A",
-        "tint": "#EAF3F8",
+        "ink": "#080D12",
+        "muted": "#35424C",
+        "line": "#AABBC7",
+        "brand": "#174F78",
+        "tint": "#E7F0F5",
         "body_font": '"IBM Plex Sans", "Avenir Next", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif',
         "heading_font": '"IBM Plex Sans", "Avenir Next", "PingFang SC", "Hiragino Sans GB", sans-serif',
         "mono_font": '"SFMono-Regular", Menlo, Monaco, "PingFang SC", monospace',
@@ -520,7 +520,7 @@ def theme_css(theme_id: str, reference_style: str | None = None) -> str:
     body {{ color: var(--ink); font-family: var(--body-font); font-size: var(--body-size); font-weight: 400; line-height: var(--line-height); letter-spacing: 0; font-kerning: normal; font-variant-numeric: lining-nums; text-rendering: optimizeLegibility; widows: 3; orphans: 3; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
     body.density-sparse {{ --body-size: 10.15pt; --line-height: 1.52; --name-size: 29pt; --section-size: 11.35pt; --entry-size: 10.7pt; --sub-size: 9.25pt; --meta-size: 8.95pt; --contact-size: 9.1pt; --section-gap: 6.6mm; --entry-gap: 1.9mm; }}
     body.density-balanced {{ --body-size: 9.75pt; --line-height: 1.47; --section-gap: 5.5mm; --entry-gap: 1.4mm; }}
-    body.density-dense {{ --body-size: 9.1pt; --line-height: 1.36; --name-size: 24pt; --section-size: 10.4pt; --entry-size: 10pt; --sub-size: 8.55pt; --meta-size: 8.25pt; --contact-size: 8.45pt; --section-gap: 3.6mm; --entry-gap: .9mm; }}
+    body.density-dense {{ --body-size: 9.35pt; --line-height: 1.45; --name-size: 24.5pt; --section-size: 10.65pt; --entry-size: 10.15pt; --sub-size: 8.75pt; --meta-size: 8.45pt; --contact-size: 8.65pt; --section-gap: 4.3mm; --entry-gap: 1.2mm; }}
     main {{ width: 100%; }}
     header {{ margin-bottom: 4.8mm; padding-bottom: 2.5mm; border-bottom: .55pt solid var(--line); }}
     .identity {{ display: flex; align-items: flex-end; justify-content: space-between; gap: 6mm; }}
@@ -544,7 +544,7 @@ def theme_css(theme_id: str, reference_style: str | None = None) -> str:
     .entry-sub a {{ color: var(--brand); text-decoration: underline; text-decoration-thickness: .45pt; text-underline-offset: .16em; }}
     .edu-details {{ margin-top: .6mm; color: var(--muted); font-size: var(--meta-size); font-variant-numeric: tabular-nums lining-nums; }}
     ul {{ margin: .6mm 0 0; padding-left: 4.2mm; }}
-    li {{ margin: .5mm 0; padding-left: .35mm; text-wrap: pretty; }}
+    li {{ margin: .8mm 0; padding-left: .35mm; text-wrap: pretty; }}
     li::marker {{ color: var(--brand); }}
     .skill-row {{ display: grid; grid-template-columns: 5.4em 1fr; gap: 2.8mm; padding: .25mm 0; break-inside: avoid; }}
     .skill-row strong {{ color: var(--brand); font-family: var(--heading-font); font-weight: var(--entry-weight); }}

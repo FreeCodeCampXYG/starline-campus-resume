@@ -101,7 +101,7 @@ jobs:
 
           version = os.environ["VERSION"]
           root = Path.cwd()
-          package_name = "qiaomu-campus-resume"
+          package_name = "starline-campus-resume"
           staging = root / "dist" / package_name
           archive = root / "dist" / f"{package_name}-{version}.zip"
           runtime_files = [
@@ -112,7 +112,7 @@ jobs:
               "scripts/assess_interview.py",
               "scripts/extract_resume.py",
               "scripts/render_resume.py",
-              "scripts/validate_resume.py",
+              "scripts/validate_resume.py",`n              "scripts/validate_skill.py",
               "scripts/validate_style_set.py",
           ]
           runtime_files.extend(path.relative_to(root).as_posix() for path in sorted((root / "references").glob("*.md")))
@@ -173,8 +173,8 @@ jobs:
 
           release_args=(
             "$GITHUB_REF_NAME"
-            "dist/qiaomu-campus-resume-${VERSION}.zip"
-            --title "qiaomu-campus-resume ${VERSION}"
+            "dist/starline-campus-resume-${VERSION}.zip"
+            --title "starline-campus-resume ${VERSION}"
             --generate-notes
           )
           if [[ -s "$notes_file" ]]; then
