@@ -135,7 +135,8 @@ jobs:
               f"release v{version}",
               str(manifest.get("publication", "")),
           )
-          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")`n
+          manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
           expected = {f"{package_name}/{relative}" for relative in runtime_files}
           with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
               for relative in runtime_files:
