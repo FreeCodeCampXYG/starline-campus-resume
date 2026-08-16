@@ -1,16 +1,12 @@
 {
-  "name": "qiaomu-campus-resume",
-  "version": "1.6.1",
-  "owner": "向阳乔木",
-  "updated_at": "2026-08-06",
+  "name": "starline-campus-resume",
+  "version": "0.1.0",
+  "owner": "墨点星痕 (starline)",
+  "updated_at": "2026-08-16",
   "status": "public",
   "maturity_tier": "production",
   "context_budget_tier": "production",
-  "copyright": "Copyright (c) 向阳乔木",
-  "contact": {
-    "x": "https://x.com/vista8",
-    "github": "https://github.com/joeseesun/"
-  },
+  "copyright": "Copyright (c) 墨点星痕 (starline)",
   "upstream_inspiration": "user-provided computer-science student resume prompt; Matt Pocock/grill-me; Addy Osmani/interview-me; alirezarezvani/grill-me; tw93/kami@fbdb54f59b7f224db55322357e5739b9ef9687f4; mmmlllnnn/ResumeCollection@56a18c26dd8d6ecd60df80b7dd8261b78dd70998 (methods and layout research only)",
   "intent": {
     "job_to_be_done": "为学生、应届生、早期职业与有真实工作经历的社会求职者提供从 0 问答写简历、按 JD 定制、优化或只美化旧简历，以及一次生成六种风格 PDF 的完整工作流",
@@ -45,7 +41,7 @@
       "fabricated claims"
     ]
   },
-  "qiaomu_defaults": {
+  "starline_defaults": {
     "language": "zh-CN",
     "page_limit": 1,
     "theme": "one role-appropriate single-column theme; multi-theme only on explicit request",
@@ -74,5 +70,5 @@
     "adaptive sparse, balanced and dense layout marker check",
     "visual page review"
   ],
-  "publication": "https://github.com/joeseesun/qiaomu-campus-resume (release v1.6.1)"
+  "publication": "pending GitHub repository confirmation"
 }

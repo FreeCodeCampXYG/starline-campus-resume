@@ -101,7 +101,7 @@ jobs:
 
           version = os.environ["VERSION"]
           root = Path.cwd()
-          package_name = "qiaomu-campus-resume"
+          package_name = "starline-campus-resume"
           staging = root / "dist" / package_name
           archive = root / "dist" / f"{package_name}-{version}.zip"
           runtime_files = [
@@ -113,6 +113,7 @@ jobs:
               "scripts/extract_resume.py",
               "scripts/render_resume.py",
               "scripts/validate_resume.py",
+              "scripts/validate_skill.py",
               "scripts/validate_style_set.py",
           ]
           runtime_files.extend(path.relative_to(root).as_posix() for path in sorted((root / "references").glob("*.md")))
@@ -135,19 +136,6 @@ jobs:
               str(manifest.get("publication", "")),
           )
           manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-          skill_path = staging / "SKILL.md"
-          skill_text = skill_path.read_text(encoding="utf-8")
-          skill_text, replacements = re.subn(
-              r'^(\s*version:\s*)["\']?\d+\.\d+\.\d+["\']?',
-              rf'\g<1>"{version}"',
-              skill_text,
-              count=1,
-              flags=re.MULTILINE,
-          )
-          if replacements != 1:
-              raise SystemExit("Unable to update the SKILL.md version")
-          skill_path.write_text(skill_text, encoding="utf-8")
 
           expected = {f"{package_name}/{relative}" for relative in runtime_files}
           with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as bundle:
@@ -173,8 +161,8 @@ jobs:
 
           release_args=(
             "$GITHUB_REF_NAME"
-            "dist/qiaomu-campus-resume-${VERSION}.zip"
-            --title "qiaomu-campus-resume ${VERSION}"
+            "dist/starline-campus-resume-${VERSION}.zip"
+            --title "starline-campus-resume ${VERSION}"
             --generate-notes
           )
           if [[ -s "$notes_file" ]]; then

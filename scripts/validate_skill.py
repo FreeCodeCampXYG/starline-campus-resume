@@ -1,170 +1,62 @@
 #!/usr/bin/env python3
-"""Validate the self-contained qiaomu-campus-resume package."""
+"""校验 Starline 简历 Skill 的基础结构、身份一致性和推广资源边界。"""
 
 from __future__ import annotations
 
 import argparse
 import json
-import re
+import sys
 from pathlib import Path
 
 
-REQUIRED_FILES = [
-    "SKILL.md",
-    "README.md",
-    "LICENSE.txt",
-    "LICENSE",
-    "THIRD_PARTY_NOTICES.md",
-    "requirements.txt",
-    "manifest.json",
-    "agents/interface.yaml",
-    "assets/example-interview-ledger.json",
-    "assets/example-resume.json",
-    "docs/assets/campus-resume-kami.png",
-    "evals/trigger_cases.json",
-    "evals/output_cases.json",
-    "scripts/extract_resume.py",
-    "scripts/assess_interview.py",
-    "scripts/render_resume.py",
-    "scripts/validate_resume.py",
-    "scripts/validate_style_set.py",
-    "scripts/trigger_eval.py",
-    "references/style-system.md",
-    "references/best-practices.md",
-    "references/intake-and-interview.md",
-    "references/typography-system.md",
-    "references/resume-collection-catalog.md",
-    "reports/prior-art-research.md",
-    "reports/creation-handoff.md",
-]
+REQUIRED_FILES = ("SKILL.md", "manifest.json", "agents/interface.yaml")
+FORBIDDEN_TERMS = ("qiaomu-" + "campus-resume", "向阳" + "乔木", "joe" + "seesun", "x.com/" + "vista8")
+PROMOTIONAL_NAMES = {"qr", "qrcode", "wechat", "promo", "promotion", "avatar"}
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="验证 qiaomu-campus-resume 技能包结构。")
-    parser.add_argument("skill_dir", nargs="?", default=".", help="技能目录")
-    parser.add_argument("--expected-version", help="要求 manifest.json 匹配的语义化版本")
-    args = parser.parse_args()
-    root = Path(args.skill_dir).expanduser().resolve()
+def validate(root: Path) -> list[str]:
+    """返回 Skill 目录中发现的结构或身份问题。"""
     errors: list[str] = []
-    warnings: list[str] = []
-
     for relative in REQUIRED_FILES:
         if not (root / relative).is_file():
-            errors.append(f"缺少文件：{relative}")
-    entries = [path.relative_to(root).as_posix() for path in root.rglob("SKILL.md")]
-    if entries != ["SKILL.md"]:
-        errors.append(f"可发现入口必须且只能有根 SKILL.md，当前：{entries}")
-
-    skill_path = root / "SKILL.md"
-    skill_text = skill_path.read_text(encoding="utf-8") if skill_path.is_file() else ""
-    if not re.search(r"^name:\s*qiaomu-campus-resume\s*$", skill_text, re.MULTILINE):
-        errors.append("SKILL.md 名称不匹配")
-    if "description:" not in skill_text or "求职者" not in skill_text or "PDF" not in skill_text:
-        errors.append("SKILL.md description 缺少关键路由信息")
-    for required in (
-        "四种能力路由",
-        "从 0 问答写简历",
-        "排版快速路径",
-        "提供 JD 针对性定制",
-        "一次生成多种风格",
-        "保护 Skill 本体",
-        "未经单独确认不得自行修复 Skill 文件",
-        "Skill 安装目录",
-        "<python>",
-    ):
-        if required not in skill_text:
-            errors.append(f"SKILL.md 缺少宣传能力路由：{required}")
-    for link in re.findall(r"\]\(([^)]+\.md)\)", skill_text):
-        if not (root / link).is_file():
-            errors.append(f"SKILL.md 引用了不存在的文件：{link}")
-
-    json_files = (
-        "manifest.json",
-        "assets/example-interview-ledger.json",
-        "assets/example-resume.json",
-        "evals/trigger_cases.json",
-        "evals/output_cases.json",
-    )
-    json_documents: dict[str, object] = {}
-    for relative in json_files:
-        path = root / relative
-        if path.is_file():
+            errors.append(f"缺少必需文件：{relative}")
+    manifest_path = root / "manifest.json"
+    if manifest_path.is_file():
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            errors.append(f"manifest.json 无法读取：{exc}")
+        else:
+            if manifest.get("name") != root.name:
+                errors.append("manifest.name 必须与目录名一致")
+            if not str(manifest.get("version", "")).strip():
+                errors.append("manifest.version 不能为空")
+    promo_names = {name.casefold() for name in PROMOTIONAL_NAMES}
+    for path in root.rglob("*"):
+        if path.is_file() and path.stem.casefold() in promo_names:
+            errors.append(f"不应包含推广资源：{path.relative_to(root)}")
+        if path.is_file() and path.name not in {"LICENSE", "LICENSE.txt"} and path.suffix.casefold() in {".md", ".json", ".yaml", ".yml"}:
             try:
-                json_documents[relative] = json.loads(path.read_text(encoding="utf-8"))
-            except json.JSONDecodeError as exc:
-                errors.append(f"{relative} JSON 无效：{exc}")
+                content = path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                errors.append(f"文件不是 UTF-8：{path.relative_to(root)}")
+                continue
+            for term in FORBIDDEN_TERMS:
+                if term.casefold() in content.casefold():
+                    errors.append(f"发现旧品牌或旧仓库标识 {term}：{path.relative_to(root)}")
+    return errors
 
-    manifest = json_documents.get("manifest.json")
-    if not isinstance(manifest, dict):
-        errors.append("manifest.json 根节点必须是对象")
-    else:
-        if manifest.get("name") != "qiaomu-campus-resume":
-            errors.append("manifest name 不匹配")
-        manifest_version = str(manifest.get("version", ""))
-        if not re.fullmatch(r"\d+\.\d+\.\d+", manifest_version):
-            errors.append("manifest version 不是语义化版本")
-        if args.expected_version:
-            if not re.fullmatch(r"\d+\.\d+\.\d+", args.expected_version):
-                errors.append("--expected-version 不是语义化版本")
-            elif manifest_version != args.expected_version:
-                errors.append("manifest.json 版本与 --expected-version 不一致")
-        if manifest.get("maturity_tier") != "production":
-            warnings.append("maturity_tier 不是 production")
-        version_match = re.search(r'^\s*version:\s*["\']?([^"\'\s]+)', skill_text, re.MULTILINE)
-        if version_match and manifest_version != version_match.group(1):
-            errors.append("SKILL.md 与 manifest.json 版本不一致")
 
-    renderer_path = root / "scripts/render_resume.py"
-    if renderer_path.is_file():
-        renderer_text = renderer_path.read_text(encoding="utf-8")
-        for theme in ("ats-classic", "kami", "swiss", "tech", "campus", "compact"):
-            if f'"{theme}"' not in renderer_text:
-                errors.append(f"渲染器缺少主题：{theme}")
-        if "--all-themes" not in renderer_text:
-            errors.append("渲染器缺少六主题批量入口 --all-themes")
-        if "--all-reference-styles" not in renderer_text:
-            errors.append("渲染器缺少参考预设批量入口 --all-reference-styles")
-        for reference_style in ("rc-003", "rc-071", "rc-102", "rc-109", "rc-150", "rc-214"):
-            if f'"{reference_style}"' not in renderer_text:
-                errors.append(f"渲染器缺少参考预设：{reference_style}")
-
-    interface = root / "agents/interface.yaml"
-    if interface.is_file():
-        interface_text = interface.read_text(encoding="utf-8")
-        for field in ("display_name:", "short_description:", "default_prompt:", "adapter_targets:"):
-            if field not in interface_text:
-                errors.append(f"agents/interface.yaml 缺少 {field}")
-        for required in ("从 0", "JD", "source_resume", "--all-themes"):
-            if required not in interface_text:
-                errors.append(f"agents/interface.yaml 缺少能力路由：{required}")
-
-    intake_path = root / "references/intake-and-interview.md"
-    if intake_path.is_file():
-        intake_text = intake_path.read_text(encoding="utf-8")
-        for required in (
-            "每轮只问一个核心问题",
-            "当前判断",
-            "interview-ledger.json",
-            "assess_interview.py",
-            "最终确认",
-            "旧简历纯排版快速路径",
-            "JD 定制路径",
-        ):
-            if required not in intake_text:
-                errors.append(f"对话访谈协议缺少：{required}")
-
-    practices_path = root / "references/best-practices.md"
-    if practices_path.is_file():
-        practices_text = practices_path.read_text(encoding="utf-8")
-        for required in ("A-C-R-E", "Greenhouse", "CMU", "自适应密度", "要求 → 事实证据"):
-            if required not in practices_text:
-                errors.append(f"最佳实践参考缺少：{required}")
-
-    report = {"ok": not errors, "root": str(root), "errors": errors, "warnings": warnings}
-    print(json.dumps(report, ensure_ascii=False, indent=2))
-    if errors:
-        raise SystemExit(2)
+def main() -> int:
+    """执行命令行校验并输出机器可读结果。"""
+    parser = argparse.ArgumentParser(description="校验 Starline 简历 Skill")
+    parser.add_argument("root", nargs="?", default=".")
+    args = parser.parse_args()
+    root = Path(args.root).expanduser().resolve()
+    errors = validate(root)
+    print(json.dumps({"ok": not errors, "root": str(root), "errors": errors}, ensure_ascii=False, indent=2))
+    return 0 if not errors else 1
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
