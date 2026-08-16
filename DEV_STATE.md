@@ -15,6 +15,7 @@
 - 已创建并推送功能分支 `codex/starline-campus-resume`，尚未合并到 `main`。
 - 已删除旧个人资源、IDE 配置和生成报告；保留上游 MIT 版权归属并追加 Starline 修改版权。
 - 已增加标准 PR 模板和 Bug/Feature Issue 模板，明确验证、隐私和事实准确性检查项。
+- 已创建指向 `main` 的 Pull Request，并设置 GitHub Topics；未创建 Git 版本 tag。
 
 ## 核心文件
 
@@ -33,6 +34,6 @@
 
 ## 下一步
 
-1. 创建并检查指向 `main` 的 Pull Request。
-2. 设置用户确认的 GitHub Topics；Git 版本 tag 需另行确认版本号和注释。
-3. 根据 PR 检查结果修正发布工作流或安装文档。
+1. 等待 Pull Request 检查和人工审阅。
+2. 根据 PR 检查结果修正发布工作流或安装文档。
+3. 如需发布 Git 版本 tag，另行确认版本号、注释和 Release notes。
