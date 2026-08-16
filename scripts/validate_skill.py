@@ -35,7 +35,7 @@ def validate(root: Path) -> list[str]:
     for path in root.rglob("*"):
         if path.is_file() and path.stem.casefold() in promo_names:
             errors.append(f"不应包含推广资源：{path.relative_to(root)}")
-        if path.is_file() and path.suffix.casefold() in {".md", ".json", ".yaml", ".yml"}:
+        if path.is_file() and path.name not in {"LICENSE", "LICENSE.txt"} and path.suffix.casefold() in {".md", ".json", ".yaml", ".yml"}:
             try:
                 content = path.read_text(encoding="utf-8")
             except UnicodeDecodeError:
