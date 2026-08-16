@@ -14,6 +14,7 @@
 - 已将个人 Fork 重命名为 `FreeCodeCampXYG/starline-campus-resume`。
 - 已创建并推送功能分支 `codex/starline-campus-resume`，尚未合并到 `main`。
 - 已删除旧个人资源、IDE 配置和生成报告；保留上游 MIT 版权归属并追加 Starline 修改版权。
+- 已增加标准 PR 模板和 Bug/Feature Issue 模板，明确验证、隐私和事实准确性检查项。
 
 ## 核心文件
 
@@ -28,7 +29,6 @@
 ## 已知风险
 
 - 本地安装副本不是 Git 仓库；远程功能分支通过 GitHub Git API 从原 `main` 树构建，历史通过远程父提交保留。
-- 当前仓库没有显式 PR 模板；发布依赖功能分支 PR 的人工检查。
 - Windows Edge 无头打印可能生成 PDF 后在临时 profile 清理阶段报锁文件错误；这属于运行环境问题，需在发布前单独验证。
 
 ## 下一步
