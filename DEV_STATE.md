@@ -11,6 +11,9 @@
 - 增加事实源与岗位投影说明、公开 README 和基础包校验脚本。
 - 明确当前渲染器以 `resume-data.json` 为输入，Markdown 作为 Agent 可读事实入口，不虚假宣称任意 Markdown 自动解析。
 - 未复制参考项目的图片、CSS、代码或文字。
+- 已将个人 Fork 重命名为 `FreeCodeCampXYG/starline-campus-resume`。
+- 已创建并推送功能分支 `codex/starline-campus-resume`，尚未合并到 `main`。
+- 已删除旧个人资源、IDE 配置和生成报告；保留上游 MIT 版权归属并追加 Starline 修改版权。
 
 ## 核心文件
 
@@ -24,12 +27,12 @@
 
 ## 已知风险
 
-- 当前目录尚未连接 Git 远程仓库。
-- 当前安装副本没有完整的源仓库历史、测试夹具或推广资源，因此发布前需要补齐许可证、GitHub PR 模板和目标仓库信息。
+- 本地安装副本不是 Git 仓库；远程功能分支通过 GitHub Git API 从原 `main` 树构建，历史通过远程父提交保留。
+- 当前仓库没有显式 PR 模板；发布依赖功能分支 PR 的人工检查。
 - Windows Edge 无头打印可能生成 PDF 后在临时 profile 清理阶段报锁文件错误；这属于运行环境问题，需在发布前单独验证。
 
 ## 下一步
 
-1. 补齐许可证、发布治理文件和 GitHub 目标信息。
-2. 运行结构、脚本和触发器验证。
-3. 确认 GitHub owner、仓库名、可见性和目标分支后，创建 feature branch、推送并提交 PR。
+1. 创建并检查指向 `main` 的 Pull Request。
+2. 设置用户确认的 GitHub Topics；Git 版本 tag 需另行确认版本号和注释。
+3. 根据 PR 检查结果修正发布工作流或安装文档。
