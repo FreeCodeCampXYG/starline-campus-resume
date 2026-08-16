@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "profile_version": "2026-08-16T09:00:00+08:00",
+  "target": {"role": "后端开发", "company_type": "软件服务"},
+  "selected_fact_ids": ["project-api", "skill-python"],
+  "excluded_fact_ids": [],
+  "emphasis": ["接口交付", "工程验证"],
+  "resume_data": "resume-data.json",
+  "user_confirmed": true
+}
