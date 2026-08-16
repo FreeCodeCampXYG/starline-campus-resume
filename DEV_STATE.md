@@ -16,6 +16,7 @@
 - 已删除旧个人资源、IDE 配置和生成报告；保留上游 MIT 版权归属并追加 Starline 修改版权。
 - 已增加标准 PR 模板和 Bug/Feature Issue 模板，明确验证、隐私和事实准确性检查项。
 - 已创建指向 `main` 的 Pull Request，并设置 GitHub Topics；未创建 Git 版本 tag。
+- 已补充事实档案/岗位投影三层契约、示例数据和 `validate_profile.py`，并将渲染临时目录改为 Starline 命名。
 
 ## 核心文件
 
@@ -31,9 +32,10 @@
 
 - 本地安装副本不是 Git 仓库；远程功能分支通过 GitHub Git API 从原 `main` 树构建，历史通过远程父提交保留。
 - Windows Edge 无头打印可能生成 PDF 后在临时 profile 清理阶段报锁文件错误；这属于运行环境问题，需在发布前单独验证。
+- 远端 `main` 当前仍有重复的 `LICENSE` 与 `LICENSE.txt`，本次优化提交会保留 `LICENSE` 并删除重复文件。
 
 ## 下一步
 
-1. 等待 Pull Request 检查和人工审阅。
-2. 根据 PR 检查结果修正发布工作流或安装文档。
+1. 创建并检查事实档案优化 PR。
+2. 合并后验证远端发布工作流包含 `validate_profile.py`。
 3. 如需发布 Git 版本 tag，另行确认版本号、注释和 Release notes。

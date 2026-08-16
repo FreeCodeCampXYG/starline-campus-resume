@@ -25,7 +25,9 @@
     ],
     "outputs": [
       "interview-ledger.json with confirmed facts, evidence links, uncertainties and confirmation state",
-      "resume-data.json with claim provenance",
+    "profile.json with confirmed facts and evidence references",
+    "projection.json with target-specific selection, emphasis and profile version",
+    "resume-data.json with claim provenance",
       "one default editable local HTML resume",
       "one default A4 text-based PDF resume",
       "optional explicit multi-theme or ResumeCollection comparison set",
@@ -55,6 +57,7 @@
     "four-route capability contract for from-scratch, JD-targeted, existing-resume and multi-style requests",
     "layout-only fast path preserves source facts and requires one explicit confirmation",
     "interview readiness assessment with two evidence loops and explicit confirmation",
+    "profile and projection evidence/version validation",
     "package validation",
     "trigger evaluation",
     "unit tests",

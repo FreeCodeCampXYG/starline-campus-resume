@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "updated_at": "2026-08-16T09:00:00+08:00",
+  "identity": {
+    "name": "示例候选人",
+    "location": "杭州"
+  },
+  "facts": [
+    {
+      "id": "project-api",
+      "kind": "project",
+      "summary": "为业务系统交付接口并补充自动化验证。",
+      "period": {"start": "2025.03", "end": "2025.06"},
+      "status": "confirmed",
+      "visibility": "public",
+      "evidence": ["interview-ledger-001"]
+    },
+    {
+      "id": "skill-python",
+      "kind": "capability",
+      "summary": "能够使用 Python 进行后端接口开发。",
+      "status": "confirmed",
+      "visibility": "public",
+      "evidence": ["project-api"]
+    }
+  ],
+  "capabilities": [
+    {"id": "cap-api", "label": "后端接口交付", "proven_by": ["project-api"]}
+  ]
+}

@@ -860,7 +860,7 @@ def browser_popen_kwargs() -> dict[str, Any]:
 
 def print_pdf(browser: str, html_path: Path, pdf_path: Path) -> None:
     pdf_path.unlink(missing_ok=True)
-    with tempfile.TemporaryDirectory(prefix="qiaomu-resume-chrome-") as profile:
+    with tempfile.TemporaryDirectory(prefix="starline-resume-chrome-") as profile:
         command = [
             browser,
             "--headless=new",

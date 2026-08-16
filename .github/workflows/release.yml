@@ -38,6 +38,7 @@ jobs:
       - name: Run cross-platform checks
         run: |
           python scripts/validate_skill.py .
+          python scripts/validate_profile.py assets/example-profile.json --projection assets/example-projection.json
           python scripts/trigger_eval.py . --cases evals/trigger_cases.json
           python -m unittest discover -s tests -v
           python scripts/assess_interview.py assets/example-interview-ledger.json
@@ -114,6 +115,7 @@ jobs:
               "scripts/render_resume.py",
               "scripts/validate_resume.py",
               "scripts/validate_skill.py",
+              "scripts/validate_profile.py",
               "scripts/validate_style_set.py",
           ]
           runtime_files.extend(path.relative_to(root).as_posix() for path in sorted((root / "references").glob("*.md")))

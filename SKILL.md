@@ -10,9 +10,10 @@ description: |
 
 ## 产品边界
 
-- `profile.md` 或访谈账本保存经过确认的长期事实；`resume-data.json` 是某个岗位、语言和页数目标的公开投影。
+- `profile.json` 保存经过确认、带证据引用的长期事实；`projection.json` 保存某个岗位的选材与强调；`resume-data.json` 是可渲染的岗位快照。Markdown 仍可作为人工阅读入口，但不能替代结构化事实档案。
 - HTML 是可本地修改的交付物；浏览器内手工修改后，若改变事实、数字或时间，必须由用户确认后回写事实源。
 - 当前脚本原生渲染 JSON；Markdown 事实源由 Agent 按 [事实源与岗位投影](references/profile-and-projection.md) 转换，不声称脚本已支持任意 Markdown 自动解析。
+- `scripts/validate_profile.py` 检查事实 ID、证据引用、私密边界、用户确认和事实版本；岗位投影过期时必须重新确认，不自动改写旧简历文案。详细契约见 [事实档案与岗位投影契约](references/profile-projection-contract.md)。
 - 所有资料、渲染和校验默认本地运行，不上传个人材料；推广图片、二维码、头像、图标和远程字体不属于本 Skill 资源。
 
 ## 使用边界
@@ -39,15 +40,15 @@ description: |
 
 1. **建立工作目录**：在用户工作区新建经用户确认的独立输出目录；保留原始文件，不覆盖、不改名、不上传外部服务。普通简历任务只能读取本 Skill 的说明和脚本，不得在 Skill 安装目录、Skill 源码仓库、`scripts/`、`references/`、`assets/`、输入文件所在目录或既有交付目录中创建、修改或覆盖文件；目标或同名输出已存在时，先说明冲突并获得确认，或新建独立子目录。`<python>` 在 macOS/Linux 为 `python3`，在 Windows 优先为 `py -3`（已配置时可用 `python`）。
 2. **保护 Skill 本体**：除非用户明确要求“修复、开发、更新或打包此 Skill”，不得修改 `SKILL.md`、`manifest.json`、`agents/`、`scripts/`、`references/`、依赖或配置。渲染、校验、换风格时发现运行问题，只报告原因、影响和可选修复；未经单独确认不得自行修复 Skill 文件。
-2. **建立事实源**：已有长期档案时先读取并按岗位筛选；没有档案时按 [事实源与岗位投影](references/profile-and-projection.md) 创建最小事实表。事实、推断、待确认项和私密备注分开保存。
+2. **建立事实源**：已有长期档案时先读取 `profile.json`；没有档案时按 [事实档案与岗位投影契约](references/profile-projection-contract.md) 创建最小事实档案。事实、推断、待确认项和私密备注分开保存；新事实先标为 `draft`，用户确认后才进入 `confirmed`。
 3. **按四种能力路由选择入口并启动对话**：
    - 有旧简历：运行 `scripts/extract_resume.py` 提取文本，并保留来源路径；扫描件无文本时，明确征得同意后才做 OCR。
    - 无旧简历、信息不足或用户要求采访：必须读取 [对话式访谈与采集](references/intake-and-interview.md)，使用一问一答模式。每轮只问一个核心问题，并附上可被用户纠正的当前判断；不要发巨型问卷。
    - 有岗位 JD：同时提取必备条件、加分项、工作内容、关键词和不匹配项；没有 JD 时按目标岗位族生成通用版。
 4. **深挖并维护事实账本**：除纯排版快速路径外，优先沿最强经历逐层追问情境、个人职责、关键行动、结果、证据和面试可解释性；每 2–3 轮用不超过 5 条复述已确认事实与剩余缺口。把过程写入本地 `interview-ledger.json`，把可公开成果标注 `evidence_type`。遵循 [真实性与证据](references/content-integrity.md)。
-5. **确定岗位投影**：读取 [简历写作与版式最佳实践](references/best-practices.md) 与 [内容与岗位策略](references/resume-strategy.md)，建立 `JD 要求 → 证据 → 简历位置` 映射；选择目标岗位、语言、页数和主题。同一事实源可以生成多个岗位投影，但不得为适配 JD 添加未经证实的技能。
-5. **通过生成门禁**：从 0 创建、内容优化或 JD 定制时，运行 `<python> scripts/assess_interview.py interview-ledger.json`；目标岗位、基础信息、教育、两项可用证据、技能证据链、关键疑点和本人确认全部通过后，才进入最终生成。纯排版快速路径改为“来源提取成功、事实摘要获确认、`source_resume` 证据类型完整、`validate_resume.py` 通过”四项门禁。用户中途要求停止时，交付事实摘要与精确缺口；除非对应门禁通过，否则只可生成明确标注的草稿 JSON/HTML，不把 PDF 伪装成最终版。
-6. **确认并起草数据文件**：先向用户展示“目标岗位 / 核心经历 / 可用数字 / 技能 / 舍弃项 / 仍有疑点”的简短事实摘要，获得明确确认。再按 [数据契约](references/data-contract.md) 写出 `resume-data.json`；需要估算时必须保守、显式标记并由学生确认。
+5. **确定岗位投影**：读取 [简历写作与版式最佳实践](references/best-practices.md) 与 [内容与岗位策略](references/resume-strategy.md)，建立 `JD 要求 → 证据 → 简历位置` 映射；写出 `projection.json`，明确选中、舍弃和强调的事实。先运行 `scripts/validate_profile.py profile.json --projection projection.json`；同一事实源可以生成多个岗位投影，但不得为适配 JD 添加未经证实的技能。
+6. **通过生成门禁**：从 0 创建、内容优化或 JD 定制时，运行 `<python> scripts/assess_interview.py interview-ledger.json` 和 `scripts/validate_profile.py profile.json --projection projection.json`；目标岗位、基础信息、教育、两项可用证据、技能证据链、关键疑点、事实版本和本人确认全部通过后，才进入最终生成。纯排版快速路径改为“来源提取成功、事实摘要获确认、`source_resume` 证据类型完整、`validate_resume.py` 通过”四项门禁。用户中途要求停止时，交付事实摘要与精确缺口；除非对应门禁通过，否则只可生成明确标注的草稿 JSON/HTML，不把 PDF 伪装成最终版。
+7. **确认并起草数据文件**：先向用户展示“目标岗位 / 核心经历 / 可用数字 / 技能 / 舍弃项 / 仍有疑点”的简短事实摘要，获得明确确认。再按 [数据契约](references/data-contract.md) 写出 `resume-data.json`；需要估算时必须保守、显式标记并由学生确认。`resume-data.json` 只承载本次投影，不回写事实档案。
 7. **内容审校**：按 A-C-R-E 检查每条 bullet 的动作、情境/范围、结果与证据；检查时间线、个人/团队边界、技能与项目对应关系、数字证据、拼写、链接、章节顺序和岗位关键词自然度。运行 `validate_resume.py` 后逐条处理弱职责词、过长 bullet、孤立技能和结果信号不足的警告；不要为了“每条都有数字”而制造数字。
 8. **渲染**：默认只生成一份最合适的简历：
 
@@ -106,8 +107,9 @@ description: |
 ## Output Contract
 
 - 对话：自然聊天式一问一答；每轮 1 个核心问题，附当前判断；定期复述已确认事实与下一缺口。
-- 事实账本：从 0、内容优化或 JD 定制时，本地 `interview-ledger.json` 保存已确认事实、疑点、证据关联和确认状态；纯排版快速路径可以不建访谈账本，但必须保留本地提取文本与一次事实确认。两者都不上传外部服务。
+- 事实账本：从 0、内容优化或 JD 定制时，本地 `interview-ledger.json` 保存访谈过程；长期事实写入 `profile.json`，岗位选材写入 `projection.json`，最终渲染消费 `resume-data.json`。纯排版快速路径可以不建访谈账本，但必须保留本地提取文本与一次事实确认。三类文件都不上传外部服务。
 - PDF：默认一套；A4、1–2 页、文本可选择与提取、无密码、无远程字体/图片依赖。批量比较仅在用户明确要求时生成。
+- 事实档案：`profile.json` 的事实带 evidence，`projection.json` 记录岗位方向、选材、事实版本和用户确认状态；过期投影不得静默生成最终 PDF。
 - HTML：与最终 PDF 同源、可本地修改、打印样式固定。
 - JSON：保存内容与证据类型，不把私密来源备注渲染进公开简历。
 - 六风格清单：记录主题 ID、中文名、适用场景与交付路径。
